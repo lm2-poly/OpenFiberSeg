@@ -26,7 +26,7 @@ plt.rcParams['axes.facecolor'] = 'white'
 plt.rcParams["font.family"] = "Times New Roman"
 
 
-path="./TomographicData/PEEK05/processed_x1-901_y1-871_z1-978/ <complete path here > /"
+path="./TomographicData/PEEK05/processed_x1-901_y1-871_z1-978/2020-01-01_12h00m00/"
 
 filename="fiberStruct_final.pickle"
 

@@ -16,6 +16,18 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg,NavigationToolba
 from skimage import feature,morphology
 from trackingFunctions import addFlaggedPixelsToImg,paddingOfImage
 
+
+import os
+
+def count_Tiff_Files(path, extension='.tiff'):
+    nbFiles = 0
+    fileList = os.listdir(path)
+    length = len(fileList)
+    for i in range(length):
+        if os.path.splitext(fileList[i])[1] == extension:
+            nbFiles += 1
+    return(nbFiles)
+
 def imshowoverlay(
     binaryMap,
     grayImg_hist,
