@@ -50,8 +50,8 @@ dilatePerimOverPores=True #leave at True for the majority of cases: prevents the
     # and thus the entire volume be labelled as "pore". For some rare cases, can be better to deactivate it, to capture the pores in contact with 
     # the boundary (especially when the scanning cylinder is entirely contained in the solid. )
 
-# scanName='Loic_PEEK_05/'
-scanName='Loic_PEEK_10/'
+scanName='Loic_PEEK_05/'
+# scanName='Loic_PEEK_10/'
 # scanName='Loic_PEEK_15/'
 # scanName='Loic_PEEK_20/'
 # scanName='Loic_PEEK_25/'
@@ -326,10 +326,16 @@ pathRawData="uCT_RawData/"
 
 print("PreProcessing on files in:\n"+commonPath+pathRawData)
 
-today   = date.today()
-dateStr = today.strftime("%b-%d-%Y")
+useTimeStamp=False # adds date to Folder name, to redo preprocessing and keep old files. Useful for debugging
 
-outputFolderName="preProcessed_"+dateStr
+if useTimeStamp:
+    today   = date.today()
+    dateStr = today.strftime("%b-%d-%Y")
+
+    outputFolderName="preProcessed_"+dateStr
+else:
+    outputFolderName="preProcessed"
+
 
 offset=iFirst
 

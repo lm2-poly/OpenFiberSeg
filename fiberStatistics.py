@@ -26,7 +26,7 @@ plt.rcParams['axes.facecolor'] = 'white'
 plt.rcParams["font.family"] = "Times New Roman"
 
 
-path="/media/facu/Svalbard_WD6TB/TomographicDataSvalbard/Loic/ToTransferComputeCanada/PEEK/TIFF LM PEEK 40/processed_x1-901_y1-871_z1-978/2020-10-19_11h43m00/"
+path="./TomographicData/PEEK05/processed_x1-901_y1-871_z1-978/ <complete path here > /"
 
 filename="fiberStruct_final.pickle"
 

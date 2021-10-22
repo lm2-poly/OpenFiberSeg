@@ -72,7 +72,8 @@ else:
 
 exclusiveZone=None # will process entire dataset
 
-#sample of exclusive zone: processing will only occur in volume defined by these coordinates:
+# example of exclusive zone: processing will only occur in volume defined by these coordinates.
+# produces truncated volumes as output tiff files.
 # exclusiveZone={
 #   "xMin":300,
 #   "xMax":601,
