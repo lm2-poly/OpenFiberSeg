@@ -26,4 +26,4 @@ __pycache__*
 
 *.swp
 
-./TomographicData/*
+./TomographicData
