@@ -1,7 +1,7 @@
 import os
 from git import Repo
 
-targetPath="./test"#"./TomographicData"
+targetPath="./TomographicData"
 
 if not os.path.isdir(targetPath):
     os.mkdir(targetPath)

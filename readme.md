@@ -4,7 +4,7 @@ Automated segmentation tool for the extraction of individual fibers in short fib
 
 ## Install python packages
 
-The packages and recommended versions are found in the requirements.txt . If those conflict with your installation, consider using this project in it's own environment. 
+This project has been tested on Python 3.7 and 3.8. The packages and recommended versions are found in the requirements.txt . If those packages conflict with your installation, consider using this project in it's own environment. 
 
 $ python3 -m pip install -r requirements.txt
 
