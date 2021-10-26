@@ -30,7 +30,7 @@ $ python3 preProcessing.py
 
 ## Pre-segmentation with Insegt
 
-run script InsegtFiber_3D.m in matlab (tested on R2018a). Again, the sub folder with PEEK05 is pre-selected. Uncomment another line from 35-41 to select another data folder. The output of Insegt will be in a folder with the ranges in x, y and z in the folder name, in a second folder with the date and time, so they are not overwritten if Insegt is run again with different parameters. 
+run script InsegtFiber_3D.m in Matlab (tested on R2016b, R2018a). Again, the sub folder with PEEK05 is pre-selected. Uncomment another line from 35-41 to select another data folder than PEEK05. The output of Insegt will be in a folder with the ranges in x, y and z in the folder name, in a second folder with the date and time, so they are not overwritten if Insegt is run again with different parameters. By default, this code will run across multiple workers.This uses a large amout of RAM. Manually set the variabl nPool to 1 or 2 to reduce RAM requirements.  
 
 ## Processing
 
