@@ -12,7 +12,7 @@ On windows, OpenCV from pip should work:
 
 $ python3 -m pip install opencv-python
 
-On Linux, you may need to build OpenCV from source. Please see: https://docs.opencv.org/4.5.3/d7/d9f/tutorial_linux_install.html
+On Linux, if installing opencv-python fails, you may need to build OpenCV from source. Please see: https://docs.opencv.org/4.5.3/d7/d9f/tutorial_linux_install.html
 
 # Run extraction on the sample data provided
 
