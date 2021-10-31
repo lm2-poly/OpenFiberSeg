@@ -130,9 +130,6 @@ height = root.winfo_screenheight()
 # Setting the window size
 root.geometry("%dx%d" % (width, height))
 
-
-#root.iconbitmap('./Logo-LM2-fav_icon.ico')
-
 # Functions
 #---------------------------------------------------------
 # Creating the function for when the launch 2D button is clicked
@@ -283,7 +280,7 @@ def launch3d_thread_fct():
 
 def calculate2dGraph(values, advanced_values, nbSlice, dimension, 
         edgesPores, V, V_pores, V_hist, V_perim, findExternalPerimeter, findPores, 
-        show2d=True):
+        show2d=True,figsize=[8,8]):
 
     # Slice intervall
     iFirst  =nbSlice[0]
@@ -347,7 +344,12 @@ def calculate2dGraph(values, advanced_values, nbSlice, dimension,
     
     fig_CannyDetection = []
     for imSlice in range(iFirst, iLast+1):
-        fig_CannyDetection_imSlice, V[:,:,imSlice-offset], V_hist[:,:,imSlice-offset], V_perim[:,:,imSlice-offset], edgesPores[:,:,imSlice-offset]=histEqu_CannyDetection(directory_path+'/'+filename[imSlice],
+        fig_CannyDetection_imSlice,\
+        V[:,:,imSlice-offset],\
+        V_hist[:,:,imSlice-offset],\
+        V_perim[:,:,imSlice-offset],\
+        edgesPores[:,:,imSlice-offset]=histEqu_CannyDetection(
+                directory_path+'/'+filename[imSlice],
                 imSlice,iFirst,iLast,pixelRangeX,pixelRangeY,
                 findExternalPerimeter,
                 findPores,
@@ -357,7 +359,9 @@ def calculate2dGraph(values, advanced_values, nbSlice, dimension,
                 plotCanny_perimeterDetection=plotCanny_perimeterDetection,
                 plotCannyEdgeDetection=plotCannyEdgeDetection,
                 plotThresholding=plotThresholding,
-                withGUI=True) 
+                withGUI=True,
+                figsize=figsize
+                ) 
         fig_CannyDetection.append(fig_CannyDetection_imSlice)
         plt.close()
 
@@ -386,7 +390,8 @@ def calculate2dGraph(values, advanced_values, nbSlice, dimension,
                 SE_edges,
                 SE_large,
                 plotFloodFilling,
-                withGUI=True)
+                withGUI=True,
+                figsize=figsize)
             fig_ContourDetection.append(fig_ContourDetection_imSlice)
             filledSlice.append(filledSlice_imSlice)
             plt.close()
@@ -403,7 +408,7 @@ def calculate2dGraph(values, advanced_values, nbSlice, dimension,
         return (edgesPores, V_pores, V_hist, V_perim)
 
 def calculate3dGraph(values, advanced_values, nbSlice, dimension,
-        edgesPores, V_pores, V_hist, V_perim, findExternalPerimeter, findPores):
+        edgesPores, V_pores, V_hist, V_perim, findExternalPerimeter, findPores,figsize=[8,8]):
     # Slice intervall
     iFirst  =nbSlice[0]
     iLast   =nbSlice[1]
@@ -439,7 +444,9 @@ def calculate3dGraph(values, advanced_values, nbSlice, dimension,
                     color=[0,233,77],
                     title="paddedV_perim, processed in 2D, imslice={: >4.0f}".format(imSlice),
                     alpha=0.4,
-                    withGUI=True)
+                    withGUI=True,
+                    figsize=figsize
+                    )
 
                 temp, fig_Opening3d_imSlice = imshowoverlay(
                     paddedV_perim_opened[paddingSize:-paddingSize,paddingSize:-paddingSize,imSlice-offset+paddingSize],
@@ -447,7 +454,9 @@ def calculate3dGraph(values, advanced_values, nbSlice, dimension,
                     color=[255,120,50],
                     title="Opening in 3D, imslice={: >4.0f}".format(imSlice),
                     alpha=0.4,
-                    withGUI=True) 
+                    withGUI=True,
+                    figsize=figsize
+                    ) 
 
                 fig_paddedV.append(fig_paddedV_imSlice)
                 fig_Opening3d.append(fig_Opening3d_imSlice)
@@ -473,7 +482,9 @@ def calculate3dGraph(values, advanced_values, nbSlice, dimension,
                         color=[0,233,77],
                         title="Processing in 2D, imslice={: >4.0f}".format(imSlice),
                         alpha=0.4,
-                        withGUI=True)
+                        withGUI=True,
+                        figsize=figsize
+                        )
 
                 temp, fig_Closing3d_imSlice = imshowoverlay(
                         paddedV_pores_opened_closed[paddingSize:-paddingSize,paddingSize:-paddingSize,imSlice-offset+paddingSize],
@@ -481,7 +492,9 @@ def calculate3dGraph(values, advanced_values, nbSlice, dimension,
                         color=[255,120,50],
                         title="closind in 3D, imslice={: >4.0f}".format(imSlice),
                         alpha=0.4,
-                        withGUI=True)
+                        withGUI=True,
+                        figsize=figsize
+                        )
 
                 fig_process2D.append(fig_process2D_imSlice)
                 fig_Closing3d.append(fig_Closing3d_imSlice)
@@ -501,12 +514,16 @@ def show2dGraph(Graph2D):
     # Creating the place to show the graph on the window
     # Creating Scrollbar for the graph
     if 'scrollbar' not in globals():
-        graph_scrollbar = Scrollbar(graph_frame, orient=VERTICAL, command=graph_canvas.yview)
-        graph_scrollbar.pack(side=RIGHT, fill=Y)
+        graph_scrollbarY = Scrollbar(graph_frame, orient="vertical", command=graph_canvas.yview)
+        graph_scrollbarY.pack(side="right", fill=Y)
+
+        graph_scrollbarX = Scrollbar(graph_frame, orient="horizontal", command=graph_canvas.xview)
+        graph_scrollbarX.pack(side="bottom", fill=X)
 
         # Configure Canvas
-        graph_canvas.configure(yscrollcommand=graph_scrollbar.set)
-        graph_canvas.bind('<Configure>', lambda e: graph_canvas.configure(scrollregion=graph_canvas.bbox("all")))
+        graph_canvas.configure(xscrollcommand=graph_scrollbarX.set,yscrollcommand=graph_scrollbarY.set)
+
+        graph_canvas.configure(scrollregion=graph_canvas.bbox("all"))
 
         # Creating scrollbar variable to indicate that the scrollbar has been created
         global scrollbar
@@ -578,12 +595,16 @@ def show3dGraph(fig_volumetricProcessing):
     graph_canvas.delete('all')
         
     if 'scrollbar' not in globals():
-        graph_scrollbar = Scrollbar(graph_frame, orient=VERTICAL, command=graph_canvas.yview)
-        graph_scrollbar.pack(side=RIGHT, fill=Y)
+        graph_scrollbarY = Scrollbar(graph_frame, orient="vertical", command=graph_canvas.yview)
+        graph_scrollbarY.pack(side="right", fill=Y)
+
+        graph_scrollbarX = Scrollbar(graph_frame, orient="horizontal", command=graph_canvas.xview)
+        graph_scrollbarX.pack(side="bottom", fill=X)
 
         # Configure Canvas
-        graph_canvas.configure(yscrollcommand=graph_scrollbar.set)
-        graph_canvas.bind('<Configure>', lambda e: graph_canvas.configure(scrollregion=graph_canvas.bbox("all")))
+        graph_canvas.configure(xscrollcommand=graph_scrollbarX.set,yscrollcommand=graph_scrollbarY.set)
+
+        graph_canvas.configure(scrollregion=graph_canvas.bbox("all"))
 
         # Creating scrollbar variable to indicate that the scrollbar has been created
         global scrollbar
@@ -1006,7 +1027,7 @@ Button_frame = Frame(root)
 Button_frame.place(relx=0.40, rely=0.92, relwidth=0.60, relheight=0.08)
     
 graph_frame = Frame(root)
-graph_frame.place(relx=0.35, rely=0, relheight=0.9, relwidth=0.65)
+graph_frame.place(relx=0.25, rely=0, relheight=0.9, relwidth=0.65)
 
 # Creating Canvas
 graph_canvas = Canvas(graph_frame)
@@ -1146,7 +1167,7 @@ PoreHigh_entry.          insert(0, params["PoreHigh"])
 PoreLow_entry.           insert(0, params["PoreLow"])
 PoreSigma_entry.         insert(0, params["PoreSigma"])
 
-# Creating ENTRY for Advance parameters
+# Creating ENTRY for Advanced parameters
 SE_perim_diameter_entry = Entry(Advanced_Parameter_frame, width=7)
 SE_perim_diameter_entry.grid(row=0, column=1, padx=5, pady=5, sticky='W')
 SE_edges_diameter_entry = Entry(Advanced_Parameter_frame, width=7)
@@ -1162,7 +1183,7 @@ SE_pores3d_radiusOpening_entry.grid(row=5, column=1, padx=5, pady=5, sticky='W')
 SE_pores3d_radiusClosing_entry = Entry(Advanced_Parameter_frame, width=7)
 SE_pores3d_radiusClosing_entry.grid(row=6, column=1, padx=5, pady=5, sticky='W')        
 
-# Creating preset values for Advance Parameters
+# Creating preset values for Advanced Parameters
 SE_perim_diameter_entry.insert(0, params["SE_perim_diameter"])
 SE_edges_diameter_entry.insert(0, params["SE_edges_diameter"])
 SE_fills_diameter_entry.insert(0, params["SE_edges_diameter"])
