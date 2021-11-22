@@ -138,7 +138,6 @@ def combinePermutations(
 
     ### permutation123
 
-    #TODO refactor check for files in dir
     filesInDir = [f.path for f in os.scandir(commonPath+permutationPath) if f.is_file()]
     watershedFound=False
 
@@ -465,7 +464,7 @@ def combinePermutations(
 
     print()
 
-    if makePlot:#TODO get rid of this in public repo
+    if makePlot:
 
         import cameraConfig
 
@@ -499,19 +498,6 @@ def combinePermutations(
 
         axes.axes.font_factor=0.65
 
-        # V_fiberMap123[0:50,:,:]=0
-        # V_fiberMap123[120:,:,:]=0
-
-        # V_fiberMap123[50:120,:50,:]=0
-        # V_fiberMap123[50:120,-50:,:]=0
-
-        # V_fiberMap123[50:120,:,:50]=0
-        # V_fiberMap123[50:120,:,-50:]=0
-
-        # srcFiberMap123=mlab.pipeline.scalar_field(np.transpose(V_fiberMap123,(1,2,0)))
-
-        # mlab.pipeline.iso_surface(srcFiberMap123,contours=[255], opacity=0.3, color=(0.2,0.2,0.8) )
-
         color132            =(0.7,0.4,0.1)
         color321            =(0.2,0.7,0.4)
         colorCollisions     =(1.,0.1,0.1)
@@ -534,37 +520,6 @@ def combinePermutations(
         srcCollisions=mlab.pipeline.scalar_field(np.transpose(V_collisions,(1,2,0)))
 
         mlab.pipeline.iso_surface(srcCollisions,contours=[255], opacity=0.8, color=colorCollisions)
-
-
-        # V_fiberMap321[V_fiberMap321<0]=0
-        # srcFiberMap321_fibers=mlab.pipeline.scalar_field(np.transpose(V_fiberMap321,(1,2,0)))
-        # ipw=mlab.pipeline.image_plane_widget(srcFiberMap321_fibers,
-        #                             plane_orientation='z_axes',
-        #                             slice_index=5,
-        #                         )
-
-
-        # for fibID,fib in fibers132.items(): 
-
-        #     fib.color=(0.7,0.4,0.1)
-
-        #     fiberPloting(fib,fibID,len(fibers132),engine,\
-        #         True,False,True,True,scale=2.) 
-
-        # for fibID,fib in fibers321.items(): 
-
-        #     fib.color=(0.2,0.7,0.4)
-
-        #     fiberPloting(fib,fibID,len(fibers132),engine,\
-        #         True,False,True,True,scale=2.) 
-
-
-        # for fibID,fib in fiberStruct_combined.items(): 
-
-        #     fib.color=(0.2,0.1,0.9)
-
-        #     fiberPloting(fib,fibID,len(fibers132),engine,\
-        #         False,True,True,True,scale=2.) 
 
         if fiberStruct_compactified:
             fib0=list(fiberStruct_compactified.keys())[0]
@@ -600,8 +555,6 @@ def combinePermutations(
         makeLegend(rangeOutline)
 
         mlab.show(stop=False)
-
-        print()
 
     print("\tDone")
 

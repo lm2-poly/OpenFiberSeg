@@ -937,7 +937,7 @@ def extractCenterPoints(
     if parallelHandle:
         # for large dataset, there is a strange bug where these processes 
         # hang at 0% cpu forever, without crashing. setting timeout to 10 min 
-        # make this obvious, witout solving the underlying cause
+        # make this obvious, without solving the underlying cause
         # TODO remove this warning if manually teminating previous processes solved the problem
         centroidsTemp = Parallel(n_jobs=num_coresCentroid,timeout=600.)\
             (delayed(centroidExtractParallel)\

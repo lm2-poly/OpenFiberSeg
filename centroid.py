@@ -86,7 +86,6 @@ class centroidObj:
             if iPnt.shape==(1,2):
                 contour.append((int(iPnt[0][0]),int(iPnt[0][1])))
             else:
-                #TODO, check if this case arises
                 raise RuntimeError("not implemented")
 
         dictCentroid["contour"]     =contour

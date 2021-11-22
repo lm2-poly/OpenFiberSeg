@@ -45,7 +45,6 @@ if parallelHandle:
 else:
     num_cores=1
 
-#TODO remove option
 dilatePerimOverPores=True #leave at True for the majority of cases: prevents the outer boundary (perimeter) to be encircled by a closed contour, 
     # and thus the entire volume be labelled as "pore". For some rare cases, can be better to deactivate it, to capture the pores in contact with 
     # the boundary (especially when the scanning cylinder is entirely contained in the solid. )

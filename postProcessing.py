@@ -394,7 +394,7 @@ def parallelGapFilling(
     engine=None,
     checkCollision=True,
     SE_radius=4,
-    useInclinedCylinderSE=True, #TODO remove this option, always used
+    useInclinedCylinderSE=True,
     articlePlots=False
     ):
         fiberID=int(round(fiberID))
@@ -887,8 +887,6 @@ def postProcessingOfFibers(
                         pos=0
                     
                     angle=np.degrees(np.arccos(np.dot(oriVec,[0.,0.,1.])))
-
-                    # if fibO.totalLength>80.:#TODO remove clause
 
                     postProcessQueue.append(
                         (

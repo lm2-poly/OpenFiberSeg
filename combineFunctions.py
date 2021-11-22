@@ -183,7 +183,6 @@ def compactify(commonPath,permutationPaths,parallelHandle=False):
 
     ### permutation123
 
-    #TODO refactor check for files in dir
     filesInDir = [f.path for f in os.scandir(commonPath+permutationPath) if f.is_file()]
 
     indexFiberMaptiff123=None
