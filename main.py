@@ -490,11 +490,15 @@ for commonPath in directories:
         "V_fiberMapCombined_randomizedFloat.tiff"
     )
 
+    makeVTKfiles=True
+    randomizeFiberMap=True
+
     if doOutputVTK:
         outputPropertyMap(
             commonPath,
-            parallelHandle=False,
-            randomizeFiberMap=True)
+            parallelHandle=True,
+            randomizeFiberMap=randomizeFiberMap,
+            makeVTKfiles=makeVTKfiles)
 
 
 

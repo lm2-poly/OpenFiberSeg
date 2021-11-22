@@ -43,7 +43,9 @@ Script main.py finds datasets processed with Insegt, but haven't been tracked, a
 
 $ python3 main.py
 
-The file PropertyMaps.vtk can be visualized with Paraview. The deviation and length information is encoded in different fields.
+For each subfolder identified by main.py, the entire processing will be attempted. If it is interrupted for some reason, relaunching main.py will start from the last completed steps. For each dataset, once the processing is completed, files fiberStruct_final.pickle and PropertyMaps.vtk are generated. The file PropertyMaps.vtk can be visualized with Paraview. The deviation and length information is encoded in different fields.
+
+If the 3D renderings are not required, variables randomizeFiberMap and makeVTKfiles can be set to False in the main.py file. This will make the final step much faster. fiberStatistics.py will still work, using fiberStruct_final.pickle. 
 
 ## Plotting results
 
