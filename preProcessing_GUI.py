@@ -34,6 +34,8 @@ rootPathSelect.title("Choose directory")
 rootPathSelect.geometry('900x400')
 rootPathSelect.config(bd=8)
 
+figsize=[12,12] #manual setting of the figsize
+
 # Creating the function to choose a directory
 def choose_directory():
     entry.delete(0,END)
@@ -54,9 +56,9 @@ def choose_directory():
             "PoreHigh": 180, 
             "PoreLow":  60,
             "PoreSigma":    3,
-            "SE_perim_diameter":15,
+            "SE_Canny_dilation_diameter":15,
             "SE_edges_diameter":9,
-            "SE_edges_diameter":5,
+            "SE_fills_diameter":5,
             "SE_large_diameter":15,
             "SE_perim_3DOpening_radius":3,
             "SE_pores3d_radiusOpening":1,
@@ -192,17 +194,17 @@ def launch2d_thread_fct():
         if findExternalPerimeter and not findPores:
             # Calling the function to make all the calculation to generates the graph
             result, fig_CannyDetection = calculate2dGraph(values, advanced_values, nbSlice, dimension,
-                    edgesPores, V, V_pores, V_hist, V_perim, findExternalPerimeter, findPores)
+                    edgesPores, V, V_pores, V_hist, V_perim, findExternalPerimeter, findPores,figsize=figsize)
             return (fig_CannyDetection)
         elif not findExternalPerimeter and findPores:
             # Calling the function to make all the calculation to generates the graph
             result, fig_ContourDetection = calculate2dGraph(values, advanced_values, nbSlice, dimension,
-                    edgesPores, V, V_pores, V_hist, V_perim, findExternalPerimeter, findPores)
+                    edgesPores, V, V_pores, V_hist, V_perim, findExternalPerimeter, findPores,figsize=figsize)
             return (fig_ContourDetection)
         elif findExternalPerimeter and findPores:
             # Calling the function to make all the calculation to generates the graph
             result, fig_CannyDetection, fig_ContourDetection = calculate2dGraph(values, advanced_values, nbSlice, dimension,
-                    edgesPores, V, V_pores, V_hist, V_perim, findExternalPerimeter, findPores)
+                    edgesPores, V, V_pores, V_hist, V_perim, findExternalPerimeter, findPores,figsize=figsize)
             return (fig_CannyDetection, fig_ContourDetection)                               
                 
 
@@ -238,7 +240,7 @@ def launch3d_thread_fct():
 
             # Calling the function to calculate the 3D graph
             fig_volumetricProcessing = calculate3dGraph(values, advanced_values, nbSlice, dimension,
-                    edgesPores, V_pores, V_hist, V_perim, findExternalPerimeter, findPores)
+                    edgesPores, V_pores, V_hist, V_perim, findExternalPerimeter, findPores,figsize=figsize)
 
                             
 
@@ -262,7 +264,7 @@ def launch3d_thread_fct():
 
             result = calculate2dGraph(values, advanced_values, nbSlice, dimension,
                     edgesPores, V, V_pores, V_hist, V_perim, findExternalPerimeter, findPores,
-                    show2d=False)
+                    show2d=False,figsize=figsize)
 
             edgesPores = result[0]
             V_pores = result[1]
@@ -274,7 +276,7 @@ def launch3d_thread_fct():
             findPores             =findPores_check
 
             fig_volumetricProcessing = calculate3dGraph(values, advanced_values, nbSlice, dimension,
-                    edgesPores, V_pores, V_hist, V_perim, findExternalPerimeter, findPores)
+                    edgesPores, V_pores, V_hist, V_perim, findExternalPerimeter, findPores,figsize=figsize)
         
         return fig_volumetricProcessing                                       
 
@@ -303,7 +305,7 @@ def calculate2dGraph(values, advanced_values, nbSlice, dimension,
     thresholding_valPerim   =values[0]       
 
     # Parameter from Advance values
-    SE_perim_diameter             =advanced_values[0]            
+    SE_Canny_dilation_diameter    =advanced_values[0]            
     SE_edges_diameter             =advanced_values[1]            
     SE_fills_diameter             =advanced_values[2]            
     SE_large_diameter             =advanced_values[3]            
@@ -319,11 +321,11 @@ def calculate2dGraph(values, advanced_values, nbSlice, dimension,
         # the boundary (especially when the scanning cylinder is entirely contained in the solid. )
 
     if findExternalPerimeter:
-        SE_perim = cv.getStructuringElement(cv.MORPH_ELLIPSE, ksize=(SE_perim_diameter, SE_perim_diameter))
-        SE_perim[:, 0]=SE_perim[ 0,:]
-        SE_perim[:,-1]=SE_perim[-1,:]
+        SE_Canny_dilation = cv.getStructuringElement(cv.MORPH_ELLIPSE, ksize=(SE_Canny_dilation_diameter, SE_Canny_dilation_diameter))
+        SE_Canny_dilation[:, 0]=SE_Canny_dilation[ 0,:]
+        SE_Canny_dilation[:,-1]=SE_Canny_dilation[-1,:]
     else:
-        SE_perim=None
+        SE_Canny_dilation=None
 
     if findPores:
         SE_edges = cv.getStructuringElement(cv.MORPH_ELLIPSE, ksize=(SE_edges_diameter, SE_edges_diameter))
@@ -354,7 +356,7 @@ def calculate2dGraph(values, advanced_values, nbSlice, dimension,
                 findExternalPerimeter,
                 findPores,
                 thresholding_valPerim,
-                Canny_sigma_perimeter,Canny_valLow_perimeter,Canny_valHigh_perimeter,SE_perim,
+                Canny_sigma_perimeter,Canny_valLow_perimeter,Canny_valHigh_perimeter,SE_Canny_dilation,
                 Canny_sigma_pores,    Canny_valLow_pores,    Canny_valHigh_pores,
                 plotCanny_perimeterDetection=plotCanny_perimeterDetection,
                 plotCannyEdgeDetection=plotCannyEdgeDetection,
@@ -415,8 +417,7 @@ def calculate3dGraph(values, advanced_values, nbSlice, dimension,
     offset = iFirst        
     
     # Parameter from Advance values
-    SE_perim_diameter             =advanced_values[0]            
-       
+    SE_Canny_dilation_diameter             =advanced_values[0]            
     SE_perim_3DOpening_radius   =advanced_values[4]  
     SE_pores3d_radiusOpening    =advanced_values[5]   
     SE_pores3d_radiusClosing    =advanced_values[6]
@@ -426,9 +427,9 @@ def calculate3dGraph(values, advanced_values, nbSlice, dimension,
     plotOpening_Closing_pores       =True #volumetric processing
 
     if findExternalPerimeter:
-        #this step removes false positive: thin regions that spills from the perimeter to inside the filament
+        #this step removes false positive: thin regions that spills from the perimeter to inside the sample
         SE_ball3D=morphology.ball(SE_perim_3DOpening_radius, dtype=np.uint8)
-        paddingSize=SE_perim_diameter # to avoid artifacts on corners after opening
+        paddingSize=SE_Canny_dilation_diameter # to avoid artifacts on corners after opening
 
         # padding on all sides is necessary because ball SE cannot reach side pixels
         paddedV_perim=paddingOfVolume(V_perim,paddingSize)
@@ -724,7 +725,7 @@ def verify_number():
         int(PoreLow_entry.get())
         float(PoreSigma_entry.get())
         # Verify all Advance Parameter entered
-        int(SE_perim_diameter_entry.get())
+        int(SE_Canny_dilation_diameter_entry.get())
         int(SE_edges_diameter_entry.get())
         int(SE_fills_diameter_entry.get())
         int(SE_large_diameter_entry.get())
@@ -759,7 +760,7 @@ def verify_entries(launch=False):
             int(PoreHigh_entry.get()), 
             int(PoreLow_entry.get()),
             float(PoreSigma_entry.get())]
-    advanced_values=[int(SE_perim_diameter_entry.get()),
+    advanced_values=[int(SE_Canny_dilation_diameter_entry.get()),
                     int(SE_edges_diameter_entry.get()),
                     int(SE_edges_diameter_entry.get()),
                     int(SE_large_diameter_entry.get()),
@@ -833,7 +834,7 @@ def verify_entries(launch=False):
             "PoreHigh": values[4], 
             "PoreLow":  values[5],
             "PoreSigma":    values[6],
-            "SE_perim_diameter":advanced_values[0],
+            "SE_Canny_dilation_diameter":advanced_values[0],
             "SE_edges_diameter":advanced_values[1],
             "SE_edges_diameter":advanced_values[2],
             "SE_large_diameter":advanced_values[3],
@@ -940,7 +941,7 @@ def validate_AdvancedParam_command():
     global valid
     # Verify that Entries are numbers
     try:
-        int(SE_perim_diameter_entry.get())
+        int(SE_Canny_dilation_diameter_entry.get())
         int(SE_edges_diameter_entry.get())
         int(SE_fills_diameter_entry.get())
         int(SE_large_diameter_entry.get())
@@ -952,7 +953,7 @@ def validate_AdvancedParam_command():
         valid = False
                 
     if valid:
-        advanced_values = [int(SE_perim_diameter_entry.get()),
+        advanced_values = [int(SE_Canny_dilation_diameter_entry.get()),
                         int(SE_edges_diameter_entry.get()),
                         int(SE_edges_diameter_entry.get()),
                         int(SE_large_diameter_entry.get()),
@@ -992,19 +993,19 @@ def info_request_command(infoRequest):
     elif infoRequest == 7:
         messagebox.showinfo("Information", "Pores smoothing SIGMA value: Standard deviation of the Gaussian filter applied on input image.")
     elif infoRequest == 8:
-        messagebox.showinfo("Information", "SE perimeter radius : Structuring element")
+        messagebox.showinfo("Information", "SE Canny dilation diameter: After Canny edge detection, the edges found are dilated so some of them can be closed if a few missing pixels are present.")
     elif infoRequest == 9:
-        messagebox.showinfo("Information", "SE edges radius :")
+        messagebox.showinfo("Information", "SE edges diameter: dilates the perimeter mask by a structuring element (SE) of this diameter to remove edges so that they are not taken to be pores at the stage of closing contours. Needs to be done after volumetric opening so spillover from sample perimeter doesn't contaminate edges of pores")
     elif infoRequest == 10:
-        messagebox.showinfo("Information", "SE fills radius :")
+        messagebox.showinfo("Information", "SE fills diameter: After first pass floddfill, remove edges that have already been filled, so they dont get distorted by dilation")
     elif infoRequest == 11:
-        messagebox.showinfo("Information", "SE large radius :")
+        messagebox.showinfo("Information", "SE large radius: After first pass floodfill, erosion is performed by structuring element of this size to find a large pore to set a seed point in.")
     elif infoRequest == 12:
-        messagebox.showinfo("Information", "SE perimeter 3d opening radius :")
+        messagebox.showinfo("Information", "SE perimeter 3d opening radius: This step removes false positive on the perimeter detection: thin regions that spills from the perimeter to inside the sample")
     elif infoRequest == 13:
-        messagebox.showinfo("Information", "SE pores 3d opening radius :")
+        messagebox.showinfo("Information", "SE pores 3d opening radius: Removes small regions that cannot contain the SE. These are false detections of pores")
     elif infoRequest == 14:
-        messagebox.showinfo("Information", "SE pores 3d closing radius :")
+        messagebox.showinfo("Information", "SE pores 3d closing radius: Add thin slices inside pore bodies that were missed in the Canny detection. SE that cannot fit into the thin region is added.")
 
 #-----------------------------------------------------
 #ALL THE CODE FOR THE GUI WINDOW
@@ -1110,24 +1111,24 @@ advance_lbl = Label(root, text="Please click on Advanced to access the advanced 
 advance_lbl.grid(row=16, column=0, columnspan=3, sticky='W')
 
 # Creating LABEL for advance parameter
-SE_perim_diameter_lbl = Label(Advanced_Parameter_frame, text="SE perimeter diameter")
-SE_perim_diameter_lbl.grid(row=0, column=0, sticky='W')
+SE_Canny_dilation_diameter_lbl = Label(Advanced_Parameter_frame, text="SE Canny dilation diameter")
+SE_Canny_dilation_diameter_lbl.grid(row=0, column=0, sticky='W')
 SE_edges_diameter_lbl = Label(Advanced_Parameter_frame, text="SE edges diameter")
 SE_edges_diameter_lbl.grid(row=1, column=0, sticky='W')
 SE_fills_diameter_lbl = Label(Advanced_Parameter_frame, text="SE fills diameter")
 SE_fills_diameter_lbl.grid(row=2, column=0, sticky='W')
 SE_large_diameter_lbl = Label(Advanced_Parameter_frame, text="SE large diameter")
 SE_large_diameter_lbl.grid(row=3, column=0, sticky='W')
-SE_perim_3DOpening_radius_lbl = Label(Advanced_Parameter_frame, text="SE 3D opening radius")
+SE_perim_3DOpening_radius_lbl = Label(Advanced_Parameter_frame, text="SE perim 3D opening radius")
 SE_perim_3DOpening_radius_lbl.grid(row=4, column=0, sticky='W')
-SE_pores3d_radiusOpening_lbl = Label(Advanced_Parameter_frame, text="SE pore 3D opening radius")
+SE_pores3d_radiusOpening_lbl = Label(Advanced_Parameter_frame, text="SE pores 3D opening radius")
 SE_pores3d_radiusOpening_lbl.grid(row=5, column=0, sticky='W')
 SE_pores3d_radiusClosing_lbl = Label(Advanced_Parameter_frame, text="SE pores 3D closing radius")
 SE_pores3d_radiusClosing_lbl.grid(row=6, column=0, sticky='W')
 
 # Creating LABEL to hold information about the advance parameter
-SE_perim_diameter_info_lbl = Label(Advanced_Parameter_frame, text="Value between [0, 255]")
-SE_perim_diameter_info_lbl.grid(row=0, column=2, sticky='W')
+SE_Canny_dilation_diameter_info_lbl = Label(Advanced_Parameter_frame, text="Value between [0, 255]")
+SE_Canny_dilation_diameter_info_lbl.grid(row=0, column=2, sticky='W')
 SE_edges_diameter_info_lbl = Label(Advanced_Parameter_frame, text="Value between [0, 255]")
 SE_edges_diameter_info_lbl.grid(row=1, column=2, sticky='W')
 SE_fills_diameter_info_lbl = Label(Advanced_Parameter_frame, text="Value between [0, 255]")
@@ -1168,8 +1169,8 @@ PoreLow_entry.           insert(0, params["PoreLow"])
 PoreSigma_entry.         insert(0, params["PoreSigma"])
 
 # Creating ENTRY for Advanced parameters
-SE_perim_diameter_entry = Entry(Advanced_Parameter_frame, width=7)
-SE_perim_diameter_entry.grid(row=0, column=1, padx=5, pady=5, sticky='W')
+SE_Canny_dilation_diameter_entry = Entry(Advanced_Parameter_frame, width=7)
+SE_Canny_dilation_diameter_entry.grid(row=0, column=1, padx=5, pady=5, sticky='W')
 SE_edges_diameter_entry = Entry(Advanced_Parameter_frame, width=7)
 SE_edges_diameter_entry.grid(row=1, column=1, padx=5, pady=5, sticky='W')
 SE_fills_diameter_entry = Entry(Advanced_Parameter_frame, width=7)
@@ -1184,9 +1185,9 @@ SE_pores3d_radiusClosing_entry = Entry(Advanced_Parameter_frame, width=7)
 SE_pores3d_radiusClosing_entry.grid(row=6, column=1, padx=5, pady=5, sticky='W')        
 
 # Creating preset values for Advanced Parameters
-SE_perim_diameter_entry.insert(0, params["SE_perim_diameter"])
+SE_Canny_dilation_diameter_entry.insert(0, params["SE_Canny_dilation_diameter"])
 SE_edges_diameter_entry.insert(0, params["SE_edges_diameter"])
-SE_fills_diameter_entry.insert(0, params["SE_edges_diameter"])
+SE_fills_diameter_entry.insert(0, params["SE_fills_diameter"])
 SE_large_diameter_entry.insert(0, params["SE_large_diameter"])
 SE_perim_3DOpening_radius_entry.insert(0, params["SE_perim_3DOpening_radius"])
 SE_pores3d_radiusOpening_entry. insert(0, params["SE_pores3d_radiusOpening"])

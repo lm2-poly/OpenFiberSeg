@@ -84,7 +84,7 @@ if scanName=="Loic_PEEK_05/":
     # value in original data to use in thresholding for perimeter detection
     thresholding_valPerim=50
 
-    SE_perim_diameter=15
+    SE_Canny_dilation_diameter=15
     SE_edges_diameter=9
     SE_fills_diameter=5
     SE_large_diameter=15 
@@ -117,7 +117,7 @@ if scanName=="Loic_PEEK_10/":
     thresholding_valPerim=50 
 
 
-    SE_perim_diameter=15
+    SE_Canny_dilation_diameter=15
     SE_edges_diameter=9
     SE_fills_diameter=5
     SE_large_diameter=15 
@@ -149,7 +149,7 @@ if scanName=="Loic_PEEK_15/":
     # value in original data to use in thresholding for perimeter detection
     thresholding_valPerim=60    
 
-    SE_perim_diameter=15
+    SE_Canny_dilation_diameter=15
     SE_edges_diameter=9
     SE_fills_diameter=5
     SE_large_diameter=15 
@@ -180,7 +180,7 @@ if scanName=="Loic_PEEK_20/":
     # value in original data to use in thresholding for perimeter detection
     thresholding_valPerim=30 
 
-    SE_perim_diameter=15
+    SE_Canny_dilation_diameter=15
     SE_edges_diameter=9
     SE_fills_diameter=5
     SE_large_diameter=15 
@@ -211,7 +211,7 @@ if scanName=="Loic_PEEK_25/":
     # value in original data to use in thresholding for perimeter detection
     thresholding_valPerim=60 
 
-    SE_perim_diameter=15
+    SE_Canny_dilation_diameter=15
     SE_edges_diameter=9
     SE_fills_diameter=5
     SE_large_diameter=15 
@@ -243,7 +243,7 @@ if scanName=="Loic_PEEK_30/":
     # value in original data to use in thresholding for perimeter detection
     thresholding_valPerim=50 
 
-    SE_perim_diameter=15
+    SE_Canny_dilation_diameter=15
     SE_edges_diameter=9
     SE_fills_diameter=5
     SE_large_diameter=15 
@@ -275,7 +275,7 @@ if scanName=="Loic_PEEK_35/":
     # value in original data to use in thresholding for perimeter detection
     thresholding_valPerim=60 
 
-    SE_perim_diameter=15
+    SE_Canny_dilation_diameter=15
     SE_edges_diameter=9
     SE_fills_diameter=5
     SE_large_diameter=15 
@@ -307,7 +307,7 @@ if scanName=="Loic_PEEK_40/":
     # value in original data to use in thresholding for perimeter detection
     thresholding_valPerim=120 
 
-    SE_perim_diameter=15
+    SE_Canny_dilation_diameter=15
     SE_edges_diameter=9
     SE_fills_diameter=5
     SE_large_diameter=15 
@@ -380,7 +380,7 @@ with TiffFile(commonPath+pathRawData+filename[iFirst]) as tif:
 
 V_perim=np.zeros((numPixX,numPixY,nData),np.uint8)
 if findExternalPerimeter:
-    SE_perim = cv.getStructuringElement(cv.MORPH_ELLIPSE, ksize=(SE_perim_diameter, SE_perim_diameter))
+    SE_perim = cv.getStructuringElement(cv.MORPH_ELLIPSE, ksize=(SE_Canny_dilation_diameter, SE_Canny_dilation_diameter))
     SE_perim[:, 0]=SE_perim[ 0,:]
     SE_perim[:,-1]=SE_perim[-1,:]
 else:
@@ -460,7 +460,7 @@ if findExternalPerimeter:
     
     SE_ball3D=morphology.ball(SE_perim_3DOpening_radius, dtype=np.uint8)
 
-    paddingSize=SE_perim_diameter # to avoid artifacts on corners after opening
+    paddingSize=SE_Canny_dilation_diameter # to avoid artifacts on corners after opening
 
     # padding on all sides is necessary because ball SE cannot reach side pixels
     paddedV_perim=paddingOfVolume(V_perim,paddingSize)
@@ -665,7 +665,7 @@ if savePreprocessingData:
         "SE_edges_radius"           :SE_edges_diameter,
         "SE_fills_radius"           :SE_fills_diameter,
         "SE_large_radius"           :SE_large_diameter,
-        "SE_perim_radius"           :SE_perim_diameter,
+        "SE_perim_radius"           :SE_Canny_dilation_diameter,
         "SE_perim_3DOpening_radius" :SE_perim_3DOpening_radius,
         "SE_pores3d_radiusClosing"  :SE_pores3d_radiusClosing,
         "SE_pores3d_radiusOpening"  :SE_pores3d_radiusOpening,
