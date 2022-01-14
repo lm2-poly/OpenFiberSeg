@@ -196,7 +196,7 @@ def watershedParallel(
         
         currentProbSlice_=currentProbSlice.copy() #Parallel doesn't allow modifying inputs
 
-        paddingValue=2**15-1#np.mean(currentProbSlice)
+        paddingValue=2**15-1
         currentProbSlice_[currentPoresSlice==1]=paddingValue
         
         paddingWidth=5
@@ -236,7 +236,6 @@ def watershedParallel(
         voxelMap_sliceExpanded=cv.watershed(img,threshMap)
     
         voxelMap_sliceExpanded[voxelMap_sliceExpanded==-1]=2
-
 
         #fix a bug where sometimes a label is given to a pixel outside the original mask
         voxelMap_slice[img[:,:,0]==0]=2 #background marker
@@ -643,8 +642,11 @@ def extractCenterPoints(
             else:
                 V_fibers[V_fibers_masked==1]=0
 
-    dilationParams={"dilationRadius_perim":dilationRadius_perim,"dilationRadius_pores":dilationRadius_pores}
-
+    dilationParams_current={"dilationRadius_perim":dilationRadius_perim,"dilationRadius_pores":dilationRadius_pores}
+    
+    print("\tLoading V_pores...")
+    V_pores_loaded_bool=False
+    
     if dilatePores:
         # no need to redo if already present on disk, at correct exclusiveZone and radii
         try:
@@ -664,22 +666,22 @@ def extractCenterPoints(
 
         if tempStr !="Not found":
             if "dilationRadius" in descriptionStr_dilatedPores:
-                # this is so it remains reverse compatible with previous implementation #TODO remove clause
                 tempStr,dilationParamsStr=tempStr.split(",\n")
                 dilationParams_fromFile=json.loads(dilationParamsStr.split("dilationParams\":")[1])
             else:
-                dilationParams_fromFile=dilationParams #to make reverse compatible #TODO remove
+                raise ValueError("Missing info in Tiff file description")
 
             exclusiveZone_fromFile=json.loads(tempStr) if tempStr !="None" else None
 
         else:
             exclusiveZone_fromFile=None
-            dilationParams_fromFile=dilationParams #to make reverse compatible #TODO remove
+            dilationParams_fromFile=dilationParams_current #to make reverse compatible #TODO remove
 
-        if dilatedPoresFileFound and exclusiveZone_fromFile==exclusiveZone and dilationParams_fromFile==dilationParams:
+        if dilatedPoresFileFound and exclusiveZone_fromFile==exclusiveZone and dilationParams_fromFile==dilationParams_current:
             print("\tV_pores_dilated found on disk at correct exclusiveZone and dilation parameters, loading...")
             with TiffFile(commonPath+permutationPaths[0]+"V_pores_dilated.tiff") as tif:
                 V_pores=np.array(tif.asarray()/255,np.uint8)
+                V_pores_loaded_bool=True
             
             if permutationVec != "123":
                 if permutationVec=="132":
@@ -699,13 +701,9 @@ def extractCenterPoints(
             if dilatedPoresFileFound:
                 if exclusiveZone_fromFile!=exclusiveZone:
                     print("exclusive zones do not match the one previously used, redo pore dilation")
-                if dilationParams_fromFile!=dilationParams:
+                if dilationParams_fromFile!=dilationParams_current:
                     print("dilation parameters do not match the one previously used, redo pore dilation")
 
-
-    print("\tLoading V_pores...")
-    with TiffFile(pathVolumes+"V_pores.tiff") as tif:
-        V_pores=np.array(tif.asarray()/255,np.uint8)
 
     try:
         with TiffFile(pathVolumes+"V_perim.tiff") as tif:
@@ -713,12 +711,22 @@ def extractCenterPoints(
     except:
         V_perim=[]    # wont exist if not created in preprocessing
 
+
+    if not V_pores_loaded_bool: 
+        # in the case where pore dilation is not used  (dilatePores=false in trackingParams.json)
+        # we need to load it here
+        with TiffFile(pathVolumes+"V_pores.tiff") as tif:
+            V_pores=np.array(tif.asarray()/255,np.uint8)
+        if exclusiveZone:
+            # V_pores_dilated will already be at correct truncation with regards to exclusiveZone
+            V_pores=V_pores[zMin:zMax,xMin:xMax,yMin:yMax]
+
+    if exclusiveZone and V_perim is not None:
+        V_perim=V_perim[zMin:zMax,xMin:xMax,yMin:yMax]
+    
+
     if dilatePores:
         if 1 in V_pores or 1 in V_perim: # no need to process if no pores are present
-            if exclusiveZone:
-                V_pores=V_pores[zMin:zMax,xMin:xMax,yMin:yMax]
-                if V_perim is not None:
-                    V_perim=V_perim[zMin:zMax,xMin:xMax,yMin:yMax]
 
             paddingSize=dilationRadius_pores*2
             SE_ball3D=morphology.ball(dilationRadius_pores, dtype=np.uint8)
@@ -748,7 +756,7 @@ def extractCenterPoints(
 
             descriptionStr=\
                 "{"+"\"shape([z,x,y])\":[{},{},{}],\n\"manualRange\":{},\n\"exclusiveZone\":{},\n\"dilationParams\":{}"\
-                .format(*V_pores.shape,manualRange,exclusiveZone,dilationParams)
+                .format(*V_pores.shape,manualRange,exclusiveZone,dilationParams_current)
 
             imwrite(pathVolumes+'V_pores_dilated.tiff',
                 V_pores*255,

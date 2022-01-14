@@ -412,7 +412,6 @@ def combinePermutations(
 
             print('fiberID: {} ,angle: {: >8.4f}, numPixels: {: >8.0f}, length: {: >8.4f}'.format(int(fiberID),angle,numPixels,interpolationChains[pos]))
 
-            # if int(fiberID) not in excludeList:
             postProcessQueue.append(
                 (
                     fiberID,
