@@ -411,8 +411,8 @@ def combinePermutations(
             
             # costly to evaluate, used in debugging
             # numPixels=np.count_nonzero(V_fiberMapCompactified==int(fiberID))
-            # print('fiberID: {} ,angle: {: >8.4f}, numPixels: {: >8.0f}, length: {: >8.4f}'.format(int(fiberID),angle,numPixels,interpolationChains[pos]))
-            print('fiberID: {} ,angle: {: >8.4f}, length: {: >8.4f}'.format(int(fiberID),angle,interpolationChains[pos]))
+            # print('Post-Processqueue, adding: fiberID: {} ,angle: {: >8.4f}, numPixels: {: >8.0f}, length: {: >8.4f}'.format(int(fiberID),angle,numPixels,interpolationChains[pos]))
+            print('Post-Processqueue, adding: fiberID: {} ,angle: {: >8.4f}, length: {: >8.4f}'.format(int(fiberID),angle,interpolationChains[pos]))
 
             postProcessQueue.append(
                 (
