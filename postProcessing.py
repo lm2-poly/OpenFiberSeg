@@ -556,10 +556,18 @@ def collisionDetectionWrapper(
 
                     # if this fiber already has been combined to another, combine to that other one
                     if fiberID in combineLUT.keys():
+                        if combineLUT[fiberID]==fiberID_other:
+                            #avoid cyclical combination
+                            continue
                         fiberID=combineLUT[fiberID]
                     
                     # if the other fiber already has been combined to another, combine to that other one
                     if fiberID_other in combineLUT.keys():
+
+                        if fiberID in combineLUT.keys():
+                            if combineLUT[fiberID]==fiberID_other:
+                                #avoid cyclical combination
+                                continue
                         fiberID_other=combineLUT[fiberID_other]
 
                     if fiberID!=fiberID_other: #otherwise, it means the combination has already been performed
