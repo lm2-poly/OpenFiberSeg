@@ -709,7 +709,7 @@ def extractCenterPoints(
         with TiffFile(pathVolumes+"V_perim.tiff") as tif:
             V_perim=np.array(tif.asarray()/255,np.uint8)
     except:
-        V_perim=[]    # wont exist if not created in preprocessing
+        V_perim=None    # wont exist if not created in preprocessing
 
 
     if not V_pores_loaded_bool: 
