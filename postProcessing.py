@@ -881,7 +881,8 @@ def postProcessingOfFibers(
             fiberObj.initializeClassAttributes(savedAttributes=fiberStruct["fiberObj_classAttributes"])
 
             #fiberObj that were added to another at blindStitching() or smartStitching wont be processed (starting fiberObj will)
-            doNotPostProcess={"stitched_blind(added)","stitched_smart(added)"}
+            #"initial_stitched_segment" tags is for duplicates, kept for plotting purposes. do not post-process
+            doNotPostProcess={"initial_stitched_segment","stitched_blind(added)","stitched_smart(added)"}
             if not fibO.tags.intersection(doNotPostProcess):
                 if not fibO.rejected:
                     oriVec=fibO.orientationVec
