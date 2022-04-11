@@ -1,5 +1,6 @@
 # by Facundo Sosa-Rey, 2021. MIT license
 
+import os
 import pickle
 
 from numpy.core.numeric import True_
@@ -29,6 +30,16 @@ path="./TomographicData/PEEK05/processed_x1-901_y1-871_z1-980/2020-01-01_12h00m0
 filename="fiberStruct_final.pickle"
 
 saveData=False
+
+saveFigures=True
+
+if saveFigures:
+    outputPathFigures=os.path.join(path,"FiguresFiberStats")
+
+    if not os.path.exists(outputPathFigures):
+        os.mkdir(outputPathFigures)
+
+
 
 with open(path+filename,'rb') as f:
     fiberStruct=pickle.load(f)
@@ -121,6 +132,9 @@ axBottom_theta.legend(lns, labs, loc=0)
 
 plt.tight_layout()
 
+if saveFigures:
+    plt.savefig(os.path.join(outputPathFigures,"HistogramLengthAngle.png"))
+
 plt.figure(figsize=[12, 8], num="cumulative distribution function: Length")
 
 plt.plot(histLength[1][:-2],  # x values are not evenly spaced
@@ -133,6 +147,8 @@ plt.xlabel("Lengths (microns)")
 plt.xticks([val for val in range(0,401,50)])
 plt.grid("minor")
 
+if saveFigures:
+    plt.savefig(os.path.join(outputPathFigures,"CDF_Length.png"))
 
 plt.figure(figsize=[12, 8], num="cumulative distribution function: angle Theta")
 
@@ -146,6 +162,9 @@ plt.xlabel("Deviation angle (degrees)")
 plt.xticks([val for val in range(0,91,15)])
 plt.grid("minor")
 
+if saveFigures:
+    plt.savefig(os.path.join(outputPathFigures,"CDF_Theta.png"))
+
 plt.figure(figsize=[8,8],num="length vs deviation")
 
 plt.scatter(length_inMicrons, theta,s=1)
@@ -153,6 +172,8 @@ plt.xlabel(r"Length ($\mu m$)")
 plt.ylabel("Deviation angle (degrees)")
 plt.tight_layout()
 
+if saveFigures:
+    plt.savefig(os.path.join(outputPathFigures,"lengthVSdeviation.png"))
 
 plt.figure(figsize=[8,8],num="Length vs azimuthal angle")
 
@@ -161,6 +182,8 @@ plt.xlabel(r"Length ($\mu m$)")
 plt.ylabel("Azimuthal angle (degrees)")
 plt.tight_layout()
 
+if saveFigures:
+    plt.savefig(os.path.join(outputPathFigures,"LengthVSazimuthalAngle.png"))
 
 plt.figure(figsize=[8,8],num="Deviation vs azimuthal angle")
 
@@ -168,6 +191,9 @@ plt.scatter(theta, phi,s=1)
 plt.xlabel("Deviation angle (degrees)")
 plt.ylabel("Azimuthal angle (degrees)")
 plt.tight_layout()
+
+if saveFigures:
+    plt.savefig(os.path.join(outputPathFigures,"DeviationVSazimuthalAngle.png"))
 
 fig=plt.figure(figsize=[8,8], num="throwaway histogram")
 
@@ -286,6 +312,8 @@ cbar1 = plt.colorbar(
 cbar1.set_ticks(levels)
 cbar1.ax.set_yticklabels(["{:1.2f}".format(val*data["nFibers"]) for val in levels])
 
+if saveFigures:
+    plt.savefig(os.path.join(outputPathFigures,"2dHist_singleVariableHistogram.png"))
 
 plt.show()
 

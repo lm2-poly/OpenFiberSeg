@@ -781,11 +781,19 @@ def extractCenterPoints(
 
 
     if manualRange is None:
-        V_voxels=np.empty(V_fibers.shape,np.int32 )
+        V_voxels=np.ones(V_fibers.shape,np.int32 )*2 # initialize to background value
         manualRangeDict={"start":0,"end":V_fibers.shape[0]} # all slices, full width in x and y
 
     else:
-        V_voxels=np.empty((zMax-zMin,xMax-xMin,yMax-yMin),np.int32 )
+        if exclusiveZone is None and manualRange is not None:
+            xMin=0
+            xMax=V_fibers.shape[1]
+            yMin=0
+            yMax=V_fibers.shape[2]
+            zMin=manualRange.start
+            zMax=manualRange.stop
+
+        V_voxels=np.ones((zMax-zMin,xMax-xMin,yMax-yMin),np.int32 )*2 # initialize to background value
         manualRangeDict={"start":manualRange.start,"end":manualRange.stop}
     
     # format in a way that is readable for .tiff file properties in file explorer
@@ -826,11 +834,15 @@ def extractCenterPoints(
             V_img=np.empty((zMax-zMin,xMax-xMin,yMax-yMin,3),np.uint8 )
 
 
-    if manualRange is None:
-        nSlices=range(V_fibers.shape[0])
-    else:
-        nSlices=manualRange
+    skipList=[]
+    for i,imSlice in enumerate(V_fibers):
+        if 1 not in imSlice:
+            skipList.append(i)
 
+    if manualRange is None:
+        nSlices=[i for i in range(V_fibers.shape[0]) if i not in skipList]
+    else:
+        nSlices=[i for i in manualRange if i not in skipList]
 
     ticWatershed=time.perf_counter()
 
@@ -847,7 +859,7 @@ def extractCenterPoints(
                     getSlice(V_fibers,imSlice,xRange,yRange),
                     getSlice(V_hist,imSlice,xRange,yRange),
                     imSlice,
-                    nSlices,
+                    range(min(nSlices),max(nSlices)),
                     initialWaterLevel,
                     waterLevelIncrements,
                     convexityDefectDist,
@@ -866,7 +878,7 @@ def extractCenterPoints(
 
             print("\n\t\tunpacking results from all processes")
 
-            for imSlice,resultTuple in enumerate(results):
+            for imSlice,resultTuple in zip(nSlices,results):
 
                 V_voxels[imSlice,:,:]=resultTuple[0]    # voxelMap_slice
 
@@ -894,7 +906,7 @@ def extractCenterPoints(
                         currentSlice,
                         currentHist,
                         imSlice,
-                        nSlices,
+                        range(min(nSlices),max(nSlices)),
                         initialWaterLevel,
                         waterLevelIncrements,
                         convexityDefectDist,

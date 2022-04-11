@@ -370,27 +370,28 @@ def tracking(commonPath,permutationPath,permutationVec,exclusiveZone=None,parall
     # fiberMap, reassignID here
     # other edge case: if fiberID is rejected, the assigning marker -1 will cause confusion with background. reassign. 
     for fiberID in [0,1]:
-        if fiberStruct[fiberID].rejected:
-            nextID=max(fiberStruct.keys())+1
-            fiberStruct[nextID]=fiberStruct[fiberID]
+        if fiberID in fiberStruct.keys(): #validation dataset can have only one fiber
+            if fiberStruct[fiberID].rejected:
+                nextID=max(fiberStruct.keys())+1
+                fiberStruct[nextID]=fiberStruct[fiberID]
 
-            # transfer ID of all centerPoints belonging to this fiber
-            for iSlice in fiberStruct[fiberID].z:
-                fiberStruct[nextID].transferID(int(iSlice),fiberID,nextID,True) # otherFiberObj.rejected=True, but centerPoints are in "tracked" object
+                # transfer ID of all centerPoints belonging to this fiber
+                for iSlice in fiberStruct[fiberID].z:
+                    fiberStruct[nextID].transferID(int(iSlice),fiberID,nextID,True) # otherFiberObj.rejected=True, but centerPoints are in "tracked" object
 
-            fiberStruct[nextID].fiberID=nextID
+                fiberStruct[nextID].fiberID=nextID
 
-            # update color LUT
-            fiberStruct[fiberID].classAttributes["LUT_fiberID_to_color"][nextID]=\
-                fiberStruct[fiberID].classAttributes["LUT_fiberID_to_color"][fiberID]
+                # update color LUT
+                fiberStruct[fiberID].classAttributes["LUT_fiberID_to_color"][nextID]=\
+                    fiberStruct[fiberID].classAttributes["LUT_fiberID_to_color"][fiberID]
 
-            del fiberStruct[fiberID].classAttributes["LUT_fiberID_to_color"][fiberID]
+                del fiberStruct[fiberID].classAttributes["LUT_fiberID_to_color"][fiberID]
 
-            # should not attempt postprocessing on this fiberID, wont be present in voxelMap: remove it
-            if fiberID in fiberObj.classAttributes["interpolatedCenters"].keys():
-                del fiberObj.classAttributes["interpolatedCenters"][fiberID]
+                # should not attempt postprocessing on this fiberID, wont be present in voxelMap: remove it
+                if fiberID in fiberObj.classAttributes["interpolatedCenters"].keys():
+                    del fiberObj.classAttributes["interpolatedCenters"][fiberID]
 
-            del fiberStruct[fiberID]
+                del fiberStruct[fiberID]
 
 
         

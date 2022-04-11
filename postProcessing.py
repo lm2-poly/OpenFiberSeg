@@ -17,12 +17,9 @@ from scipy import ndimage
 import numpy as np
 
 from extractCenterPoints    import getTiffProperties
-from visualisationTool      import addPlaneWidgets
 from combineFunctions       import findCollisions
 from fibers                 import fiberObj
 from combineFunctions       import compactifySlice,makePropertySlice
-
-from mayavi import mlab
 
 from joblib import Parallel, delayed  
 import multiprocessing
@@ -168,6 +165,9 @@ def volumetricGapFilling(
     
     
     if makePlotsIndividual:
+        from mayavi import mlab
+        from visualisationTool      import addPlaneWidgets
+
         mlab.figure(figure="Structuring element, closing, fiberID={}".format(fiberID),size=(1200,1050),bgcolor=(1.,1.,1.))
 
         transposedSE_rod3D=np.transpose(SE_rod3D,(1,2,0))
@@ -495,6 +495,9 @@ def collisionDetectionWrapper(
     collisionsDict={}
 
     if makePlotsIndividual or makePlotAll:
+        from mayavi import mlab
+        from visualisationTool      import addPlaneWidgets
+        
         engine=mlab.get_engine()
     else:
         engine=None
@@ -748,6 +751,9 @@ def postProcessingOfFibers(
     ):
     
     if makePlotsIndividual or makePlotAll:
+        from mayavi import mlab
+        from visualisationTool      import addPlaneWidgets
+
         engine = mlab.get_engine()
     else:
         engine=None
