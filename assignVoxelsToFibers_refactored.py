@@ -47,7 +47,7 @@ def assignVoxelsToFibers_Main(
     makePlots=False,
     parallelHandle=True,
     verbose=False,
-    addDisksAroundCenterPnts=True,
+    addDisksAroundCenterPnts=False,
     textLabels=True 
     ):
 
