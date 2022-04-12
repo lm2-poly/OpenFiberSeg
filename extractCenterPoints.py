@@ -413,6 +413,11 @@ def centroidExtractParallel(
         # detect contours in the mask and check if single connected region is present
         cnt = cv.findContours(mask, cv.RETR_EXTERNAL,
             cv.CHAIN_APPROX_SIMPLE)[-2]
+
+        if type(cnt)==tuple:
+            #OpenCV version 4.5.4 returns tuples instead of list
+            cnt=list(cnt)
+
         if len(cnt)>1:
             print("\t\tMarker is more than one connected region, slice number={}, marker={}".format(sliceNumber,marker))
             for iContour,contourObj in enumerate(cnt):
