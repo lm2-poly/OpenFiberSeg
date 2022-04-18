@@ -585,9 +585,9 @@ def extractCenterPoints(
         zMin=0 #for passing slice of V_pores
 
     if manualRange is not None:
-        offset=manualRange.start
+        offset=max(manualRange.start,zMin)
     else:
-        offset=0
+        offset=zMin
 
     tic = time.perf_counter()
 
@@ -731,7 +731,7 @@ def extractCenterPoints(
     
 
     if dilatePores:
-        if 1 in V_pores or 1 in V_perim: # no need to process if no pores are present
+        if 1 in V_pores: # no need to process if no pores are present
 
             paddingSize=dilationRadius_pores*2
             SE_ball3D=morphology.ball(dilationRadius_pores, dtype=np.uint8)
@@ -839,6 +839,7 @@ def extractCenterPoints(
             V_img=np.empty((zMax-zMin,xMax-xMin,yMax-yMin,3),np.uint8 )
 
 
+
     skipList=[]
     for i,imSlice in enumerate(V_fibers):
         if 1 not in imSlice:
@@ -885,10 +886,10 @@ def extractCenterPoints(
 
             for imSlice,resultTuple in zip(nSlices,results):
 
-                V_voxels[imSlice,:,:]=resultTuple[0]    # voxelMap_slice
+                V_voxels[imSlice-offset,:,:]=resultTuple[0]    # voxelMap_slice
 
                 if plotCentroids:
-                    V_img[imSlice,:,:,:]=resultTuple[1] # img
+                    V_img[imSlice-offset,:,:,:]=resultTuple[1] # img
 
             #save temporary file, as the next step sometimes hangs forever
             print("\tSaving temporary file to disk")
