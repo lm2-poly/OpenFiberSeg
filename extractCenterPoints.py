@@ -198,8 +198,11 @@ def watershedParallel(
         
         currentProbSlice_=currentProbSlice.copy() #Parallel doesn't allow modifying inputs
 
-        #use mid range value for padding, for uint8 type
-        paddingValue=2**7-1
+        #use mid range value for padding, according to datatype
+        if currentProbSlice_.dtype==np.uint32:
+            paddingValue=2**15-1 #previous versions used uint32, with no performance improvement
+        elif currentProbSlice_.dtype==np.uint8:
+            paddingValue=2**7-1
 
         currentProbSlice_[currentPoresSlice==1]=paddingValue
         

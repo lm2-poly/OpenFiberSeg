@@ -314,7 +314,7 @@ for iPermutation=1:3
     V_prob(:,:,nextSlice)=Pcentre;
     
     %Visualise for each pixel its probabily of belonging to a fibre centre region
-    h = figure(1); h.Units = 'normalized'; h.Position = [0.1 0.1 .9 .9];
+    h = figure(1); h.Units = 'normalized'; h.Position = [0.1 0.1 .7 .7];
     subplot(1,2,1), imagesc(Pcentre), axis image, colormap gray,  colorbar,
     figure(1), subplot(1,2,2), histogram(Pcentre(:)),
     ylabel('Count of probabilities'), xlabel('Range of probabilities')

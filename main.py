@@ -55,7 +55,7 @@ print('Current hostname is :', hostnameStr)
 
 ####################################################################makePlots##
 
-dataPath="./TomographicData/"
+dataPath="./TomographicData/PEEK15/"
 
 
 # find directories with dataset processed with Insegt, but not tracked 
