@@ -111,8 +111,7 @@ def assignVoxelsToFibers_Main(
         V_fibers_masked=None
 
     # multithreading parameters
-    # num_cores = int(round(multiprocessing.cpu_count()/2)) #crashes on large sets
-    num_cores = multiprocessing.cpu_count()-2 #crashes on large sets
+    num_cores = min(multiprocessing.cpu_count()-2,48) #produces error if too many cores are used
 
 
     if makePlots:
@@ -373,5 +372,5 @@ def assignVoxelsToFibers_Main(
         multiprocessing.current_process().name
         )
     )
-    
+
     return V_fiberMap,fiberStruct,xRes,unitTiff,descriptionStr,times_assign
