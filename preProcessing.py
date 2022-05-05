@@ -50,7 +50,7 @@ dilatePerimOverPores=True #leave at True for the majority of cases: prevents the
 
 scanName='Loic_PEEK_05/'
 # scanName='Loic_PEEK_10/'
-# scanName='Loic_PEEK_15/'
+scanName='Loic_PEEK_15/'
 # scanName='Loic_PEEK_20/'
 # scanName='Loic_PEEK_25/'
 # scanName='Loic_PEEK_30/'

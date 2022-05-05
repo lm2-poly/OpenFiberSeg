@@ -33,7 +33,7 @@ dataPath='./TomographicData/';
 
 scanName='PEEK05/';
 % scanName='PEEK10/';
-% scanName='PEEK15/';
+scanName='PEEK15/';
 % scanName='PEEK20/';
 % scanName='PEEK25/';
 % scanName='PEEK30/';
