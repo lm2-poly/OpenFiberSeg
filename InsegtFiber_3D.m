@@ -416,7 +416,7 @@ for iPermutation=1:3
                 imwrite(V_fibers(:,:,iSlice),     V_export_nameSegt,...
                     'Resolution',[xResolution,yResolution]*scaleFactor,...
                     'Description',descriptionStr);
-                imwrite(im2uint16(V_prob(:,:,iSlice)),     V_export_nameProb,...
+                imwrite(im2uint8(V_prob(:,:,iSlice)),     V_export_nameProb,...
                     'Resolution',[xResolution,yResolution]*scaleFactor,...
                     'Description',descriptionStr);
                 if perim_present
@@ -428,7 +428,7 @@ for iPermutation=1:3
                 imwrite(im2uint8(V_hist (:,:,iSlice)),V_export_nameHist, 'WriteMode', 'append');
                 imwrite(im2uint8(V_pores(:,:,iSlice)),V_export_namePores,'WriteMode', 'append');
                 imwrite(V_fibers(:,:,iSlice),         V_export_nameSegt, 'WriteMode', 'append');
-                imwrite(im2uint16(V_prob(:,:,iSlice)),V_export_nameProb, 'WriteMode', 'append');
+                imwrite(im2uint8(V_prob(:,:,iSlice)),V_export_nameProb, 'WriteMode', 'append');
                 if perim_present
                     imwrite(V_perim(:,:,iSlice),     V_export_namePerim,'WriteMode', 'append');              
                 end
