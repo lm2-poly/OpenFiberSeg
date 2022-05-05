@@ -41,7 +41,7 @@ def plotCandidates(fibObjDown,fibObjUp):
 
 ###########################################################
 
-num_cores =multiprocessing.cpu_count()-2 
+num_cores =min(multiprocessing.cpu_count()-2,48) # errors thrown if too many cores are used
 
 
 def tracking(commonPath,permutationPath,permutationVec,exclusiveZone=None,parallelHandle=False,verboseHandle=False):

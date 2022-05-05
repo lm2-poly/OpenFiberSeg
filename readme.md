@@ -4,7 +4,7 @@ Automated segmentation tool for the extraction of individual fibers in short fib
 
 ## Install python packages
 
-This project has been tested on Python 3.7 and 3.8. The packages and recommended versions are found in the requirements.txt . If those packages conflict with your installation, consider using this project in it's own environment. 
+This project has been tested on Python 3.7 and 3.8, on Linux and Windows. The packages and recommended versions are found in the requirements.txt . If those packages conflict with your installation, consider using this project in it's own environment. 
 
 (the following notation indicates running a command in terminal)
 $ <command>
@@ -12,10 +12,6 @@ $ <command>
 Install requirements:
 
 $ python3 -m pip install -r requirements.txt
-
-On windows, OpenCV from pip should work:
-
-$ python3 -m pip install opencv-python
 
 On Linux, if installing opencv-python with the above command fails, you may need to build OpenCV from source. Please see: https://docs.opencv.org/4.5.3/d7/d9f/tutorial_linux_install.html
 
@@ -35,7 +31,9 @@ $ python3 preProcessing.py
 
 ## Pre-segmentation with Insegt
 
-Run script InsegtFiber_3D.m in Matlab (tested on R2016b, R2018a). Again, the sub folder with PEEK05 is pre-selected, and will be processed if the file is run as-is. Un-comment another line from 35-41 to select another data folder than PEEK05. The output of Insegt will be in a folder with the ranges in x, y and z in the folder name, in a second folder with the date and time, so they are not over-written if Insegt is run again with different parameters. By default, this code will run across multiple workers. This uses a large amount of RAM. Manually set the variable nPool to 1 or 2 to reduce RAM requirements.  
+Run script InsegtFiber_3D.m in Matlab (tested on R2016b, R2018a,R2018b). Again, the sub folder with PEEK05 is pre-selected, and will be processed if the file is run as-is. Un-comment another line from 35-41 to select another data folder than PEEK05. The output of Insegt will be in a folder with the ranges in x, y and z in the folder name, in a second folder with the date and time, so they are not over-written if Insegt is run again with different parameters. By default, this code will run across multiple workers. This uses a large amount of RAM. Manually set the variable nPool to 1 or 2 to reduce RAM requirements.  
+
+To use compression available in python, but not matlab, and save on disk space, the compressTiff.py script is called from InsegtFiber_3D.m. However, the command on line 469 may require modification to suit your installation of python. 
 
 ## Processing
 
@@ -61,9 +59,10 @@ $ python3 fiberStatistics.py
 # Working with your own tomographic data
 
 Place the tiff files of your scans in their own path in:
-./TomographicData/<Scan Name>/uCT_RawData
+./TomographicData/\<Scan Name\>/uCT_RawData
 
 To find the preprocessing parameters, run the GUI application and follow instructions in:
 
 $ python3 preProcessing_GUI.py
 
+Beware the GUI is still in beta. 
