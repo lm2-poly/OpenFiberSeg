@@ -1,14 +1,9 @@
 # by Facundo Sosa-Rey, 2021. MIT license
 
-from PIL.Image import composite
 from matplotlib import patches
 from scipy.spatial import KDTree as KDTree
 import numpy as np
-import mayavi.mlab as mlab
-from mayavi.sources.api import ParametricSurface
-from mayavi.sources.builtin_surface import BuiltinSurface
-from mayavi.modules.api import Surface
-from mayavi.filters.transform_data import TransformData
+
 
 import viscid as vs
 import cv2 as cv
@@ -450,6 +445,13 @@ def RBGUint8_to_Bool(imageUint8):
 
 
 def drawEllipsoid(engine,phi,theta,beta,translationVec,length,radius,representation="surface" ):
+    
+    #making imports inside function so codebase works even if mayavi is unworkable on some machines 
+    from mayavi.sources.api import ParametricSurface
+    from mayavi.sources.builtin_surface import BuiltinSurface
+    from mayavi.modules.api import Surface
+    from mayavi.filters.transform_data import TransformData
+
     # Add a cylinder builtin source
     ellipsoid_src = BuiltinSurface()
     engine.add_source(ellipsoid_src)
@@ -487,6 +489,13 @@ def drawEllipsoid(engine,phi,theta,beta,translationVec,length,radius,representat
 
 def drawEllipsoidParametric(engine,phi,theta,beta,translationVec,
     half_length,radius,color,representation="wireframe",opacity=0.1 ):
+
+    #making imports inside function so codebase works even if mayavi is unworkable on some machines 
+    from mayavi.sources.api import ParametricSurface
+    from mayavi.sources.builtin_surface import BuiltinSurface
+    from mayavi.modules.api import Surface
+    from mayavi.filters.transform_data import TransformData
+
     # Add a parametric surface source
     ellipsoid_src = ParametricSurface()
     ellipsoid_src.function = 'ellipsoid'
@@ -559,6 +568,9 @@ def plotEllipsoid(fibObj,fiberDiameter,engine,opacity=0.1,representation="wirefr
 
 
 def fiberPloting(fibObj,iFib,nFib,nFibTracked,engine,params,scale=2.):
+
+    import mayavi.mlab as mlab
+
     print("Drawing fiber object #{}/{},\t ({} are \"tracked\")".format(iFib,nFib,nFibTracked))
 
     drawJaggedLines     =params["drawJaggedLines"]
@@ -729,7 +741,7 @@ def blobDetection(grayImg,imSlice,convexityDefectDist,plotConvexityDefects=False
     if plotConvexityDefects:
         from matplotlib import pyplot as plt
 
-        plt.figure(figsize=figsize)
+        plt.figure(figsize=[8,8])
         plt.imshow(img)
         plt.title("convexity defect detection result, imSlice={}".format(imSlice),fontsize=22)
         plt.tight_layout()
@@ -1080,9 +1092,12 @@ def watershedTransform(imageSliceGray,
     # identify most common marker, change it to 2 if not 2 already
     backGroundMarker=most_frequent(list(voxelMap_slice.ravel()))
     if backGroundMarker !=2:
-        voxelMap_slice[voxelMap_slice==1]=-999999
-        voxelMap_slice[voxelMap_slice==backGroundMarker]=2
-        voxelMap_slice[voxelMap_slice==-999999]=1
+        if np.max(voxelMap_slice)>3:
+            # some validation datasets have only a single fiber (marker==3), 
+            # which will occupy the majority of the space, but this is not a problem
+            voxelMap_slice[voxelMap_slice==1]=-999999
+            voxelMap_slice[voxelMap_slice==backGroundMarker]=2
+            voxelMap_slice[voxelMap_slice==-999999]=1
 
     #fix a bug where sometimes a label is given to a pixel outside the original mask
     voxelMap_slice[grayImg==0]=2 #background marker
@@ -1270,9 +1285,12 @@ def findWatershedMarkers(imageSliceGray,
     # identify most common marker, change it to 2 if not 2 already
     backGroundMarker=most_frequent(list(voxelMap_slice.ravel()))
     if backGroundMarker !=2:
-        voxelMap_slice[voxelMap_slice==1]=-999999 #dummy temporary label
-        voxelMap_slice[voxelMap_slice==backGroundMarker]=2
-        voxelMap_slice[voxelMap_slice==-999999]=1
+        if np.max(voxelMap_slice)>3:
+            # some validation datasets have only a single fiber (marker==3), 
+            # which will occupy the majority of the space, but this is not a problem
+            voxelMap_slice[voxelMap_slice==1]=-999999 #dummy temporary label
+            voxelMap_slice[voxelMap_slice==backGroundMarker]=2
+            voxelMap_slice[voxelMap_slice==-999999]=1
 
     #fix a bug where sometimes a label is given to a pixel outside the original mask
     voxelMap_slice[grayImg==0]=2 #background marker
@@ -1748,7 +1766,8 @@ def assignVoxelsToFibers(
     testSlice=fiberMap_slice.copy()
     testSlice[testSlice<-1]=-1
     markersPresent=set(np.unique(testSlice))
-    markersPresent.remove(-1)
+    if -1 in markersPresent: # if no fiber is rejected, wont be present
+        markersPresent.remove(-1)
 
     if markersPresent.intersection(rejectedFiberIDs):
         print("rejected fiberID missed, correcting")

@@ -1,5 +1,5 @@
 vtk==9.0.1
-mayavi==4.7.2
+mayavi
 PyQt5==5.14.1
 scipy==1.5.2
 viscid==1.0.0
@@ -8,5 +8,6 @@ tifffile==2020.7.24
 exifread==2.3.1
 joblib==0.16.0
 matplotlib==3.1.2  #matplotlib 3.1.2 is used so the pixel value is directly accessible by hovering over in in imshow()
-numpy==1.21.0
+numpy
 gitpython==3.1.24
+opencv-python

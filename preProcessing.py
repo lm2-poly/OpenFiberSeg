@@ -1,6 +1,5 @@
 # by Facundo Sosa-Rey, 2021. MIT license
 
-from pickle import TRUE
 import numpy as np
 import os
 from datetime import date
@@ -45,7 +44,6 @@ if parallelHandle:
 else:
     num_cores=1
 
-#TODO remove option
 dilatePerimOverPores=True #leave at True for the majority of cases: prevents the outer boundary (perimeter) to be encircled by a closed contour, 
     # and thus the entire volume be labelled as "pore". For some rare cases, can be better to deactivate it, to capture the pores in contact with 
     # the boundary (especially when the scanning cylinder is entirely contained in the solid. )
@@ -85,7 +83,7 @@ if scanName=="Loic_PEEK_05/":
     # value in original data to use in thresholding for perimeter detection
     thresholding_valPerim=50
 
-    SE_perim_diameter=15
+    SE_Canny_dilation_diameter=15
     SE_edges_diameter=9
     SE_fills_diameter=5
     SE_large_diameter=15 
@@ -118,7 +116,7 @@ if scanName=="Loic_PEEK_10/":
     thresholding_valPerim=50 
 
 
-    SE_perim_diameter=15
+    SE_Canny_dilation_diameter=15
     SE_edges_diameter=9
     SE_fills_diameter=5
     SE_large_diameter=15 
@@ -150,7 +148,7 @@ if scanName=="Loic_PEEK_15/":
     # value in original data to use in thresholding for perimeter detection
     thresholding_valPerim=60    
 
-    SE_perim_diameter=15
+    SE_Canny_dilation_diameter=15
     SE_edges_diameter=9
     SE_fills_diameter=5
     SE_large_diameter=15 
@@ -181,7 +179,7 @@ if scanName=="Loic_PEEK_20/":
     # value in original data to use in thresholding for perimeter detection
     thresholding_valPerim=30 
 
-    SE_perim_diameter=15
+    SE_Canny_dilation_diameter=15
     SE_edges_diameter=9
     SE_fills_diameter=5
     SE_large_diameter=15 
@@ -212,7 +210,7 @@ if scanName=="Loic_PEEK_25/":
     # value in original data to use in thresholding for perimeter detection
     thresholding_valPerim=60 
 
-    SE_perim_diameter=15
+    SE_Canny_dilation_diameter=15
     SE_edges_diameter=9
     SE_fills_diameter=5
     SE_large_diameter=15 
@@ -244,7 +242,7 @@ if scanName=="Loic_PEEK_30/":
     # value in original data to use in thresholding for perimeter detection
     thresholding_valPerim=50 
 
-    SE_perim_diameter=15
+    SE_Canny_dilation_diameter=15
     SE_edges_diameter=9
     SE_fills_diameter=5
     SE_large_diameter=15 
@@ -276,7 +274,7 @@ if scanName=="Loic_PEEK_35/":
     # value in original data to use in thresholding for perimeter detection
     thresholding_valPerim=60 
 
-    SE_perim_diameter=15
+    SE_Canny_dilation_diameter=15
     SE_edges_diameter=9
     SE_fills_diameter=5
     SE_large_diameter=15 
@@ -308,7 +306,7 @@ if scanName=="Loic_PEEK_40/":
     # value in original data to use in thresholding for perimeter detection
     thresholding_valPerim=120 
 
-    SE_perim_diameter=15
+    SE_Canny_dilation_diameter=15
     SE_edges_diameter=9
     SE_fills_diameter=5
     SE_large_diameter=15 
@@ -373,7 +371,7 @@ filename    ={}
 filename={imSlice:formatStr.format(imSlice) for imSlice in range(iFirst,iLast+1) }
 
 
-with TiffFile(commonPath+pathRawData+filename[iFirst]) as tif:
+with TiffFile(os.path.join(commonPath,pathRawData,filename[iFirst])) as tif:
     xRes,unitTiff=getTiffProperties(tif)
 
 
@@ -381,7 +379,7 @@ with TiffFile(commonPath+pathRawData+filename[iFirst]) as tif:
 
 V_perim=np.zeros((numPixX,numPixY,nData),np.uint8)
 if findExternalPerimeter:
-    SE_perim = cv.getStructuringElement(cv.MORPH_ELLIPSE, ksize=(SE_perim_diameter, SE_perim_diameter))
+    SE_perim = cv.getStructuringElement(cv.MORPH_ELLIPSE, ksize=(SE_Canny_dilation_diameter, SE_Canny_dilation_diameter))
     SE_perim[:, 0]=SE_perim[ 0,:]
     SE_perim[:,-1]=SE_perim[-1,:]
 else:
@@ -416,15 +414,15 @@ print('\n\tPre-allocation completed')
 
 filesInDir = [f.path for f in os.scandir(commonPath) if f.is_dir()]
 
-if commonPath+outputFolderName not in filesInDir:
-    os.mkdir(commonPath+outputFolderName)
+if os.path.join(commonPath,outputFolderName) not in filesInDir:
+    os.mkdir(os.path.join(commonPath,outputFolderName))
 
 
 print('\n\tHistogram equalization and Canny edge detection started')
 
 results = Parallel(n_jobs=num_cores)\
     (delayed(histEqu_CannyDetection)\
-        (commonPath+pathRawData+filename[imSlice],
+        (os.path.join(commonPath,pathRawData,filename[imSlice]),
         imSlice,iFirst,iLast,pixelRangeX,pixelRangeY,
         findExternalPerimeter,
         findPores,
@@ -461,7 +459,7 @@ if findExternalPerimeter:
     
     SE_ball3D=morphology.ball(SE_perim_3DOpening_radius, dtype=np.uint8)
 
-    paddingSize=SE_perim_diameter # to avoid artifacts on corners after opening
+    paddingSize=SE_Canny_dilation_diameter # to avoid artifacts on corners after opening
 
     # padding on all sides is necessary because ball SE cannot reach side pixels
     paddedV_perim=paddingOfVolume(V_perim,paddingSize)
@@ -601,7 +599,7 @@ if findPores:
 
     porosity=volumeInPores/volumeInFilament
 
-    print("Total porosity detected in volume: {: >8.2f}".format(porosity))
+    print("Total porosity detected in volume: {: >8.2f}%".format(porosity*100.))
 
     ##########################################
 else:
@@ -614,14 +612,14 @@ if savePreprocessingData:
 
     print('\n\tWriting to disk started')
     
-    print("\n\t\tWriting output to : \n\t "+commonPath+outputFolderName)
+    print("\n\t\tWriting output to : \n\t{}".format(os.path.join(commonPath,outputFolderName)))
 
     descriptionStr="{"+"\"shape([x,y,z])\":[{},{},{}]".format(*(V_original.shape))+"}"
 
     print("\t\twriting V_original.tiff")
 
     tifffile.imwrite(
-        commonPath+outputFolderName+'/V_original.tiff',
+        os.path.join(commonPath,outputFolderName,'V_original.tiff'),
         np.transpose(V_original,(2,0,1)),
         resolution=(xRes,xRes,unitTiff),
         compress=True,
@@ -631,7 +629,7 @@ if savePreprocessingData:
     print("\t\twriting V_hist.tiff")
 
     tifffile.imwrite(
-        commonPath+outputFolderName+'/V_hist.tiff',
+        os.path.join(commonPath,outputFolderName,'V_hist.tiff'),
         np.transpose(V_hist,(2,0,1)),
         resolution=(xRes,xRes,unitTiff),
         compress=True,
@@ -641,7 +639,7 @@ if savePreprocessingData:
     print("\t\twriting V_pores.tiff")
 
     tifffile.imwrite(
-        commonPath+outputFolderName+'/V_pores.tiff',
+        os.path.join(commonPath,outputFolderName,'V_pores.tiff'),
         np.transpose(V_pores,(2,0,1)),
         resolution=(xRes,xRes,unitTiff),
         compress=True,
@@ -654,7 +652,7 @@ if savePreprocessingData:
         print("\t\twriting V_perim.tiff")
 
         tifffile.imwrite(
-            commonPath+outputFolderName+'/V_perim.tiff',
+            os.path.join(commonPath,outputFolderName,'V_perim.tiff'),
             np.transpose(V_perim,(2,0,1)),
             resolution=(xRes,xRes,unitTiff),
             compress=True,
@@ -666,7 +664,7 @@ if savePreprocessingData:
         "SE_edges_radius"           :SE_edges_diameter,
         "SE_fills_radius"           :SE_fills_diameter,
         "SE_large_radius"           :SE_large_diameter,
-        "SE_perim_radius"           :SE_perim_diameter,
+        "SE_perim_radius"           :SE_Canny_dilation_diameter,
         "SE_perim_3DOpening_radius" :SE_perim_3DOpening_radius,
         "SE_pores3d_radiusClosing"  :SE_pores3d_radiusClosing,
         "SE_pores3d_radiusOpening"  :SE_pores3d_radiusOpening,
@@ -684,8 +682,8 @@ if savePreprocessingData:
         "commonPath"                :commonPath,
     }
 
-    with open(commonPath+outputFolderName+'/preProcessingParams.json', "w") as f:
-                json.dump(params, f, sort_keys=False, indent=4)
+    with open(os.path.join(commonPath,outputFolderName,'preProcessingParams.json'), "w") as f:
+        json.dump(params, f, sort_keys=False, indent=4)
 
     print('\tWriting to disk completed')
 

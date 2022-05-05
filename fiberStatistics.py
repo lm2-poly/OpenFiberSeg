@@ -1,10 +1,9 @@
 # by Facundo Sosa-Rey, 2021. MIT license
 
+import os
 import pickle
 
 from numpy.core.numeric import True_
-from fibers import fiberObj
-from centroid import centroidObj
 
 import numpy as np
 
@@ -26,20 +25,29 @@ plt.rcParams['axes.facecolor'] = 'white'
 plt.rcParams["font.family"] = "Times New Roman"
 
 
-path="./TomographicData/PEEK05/processed_x1-901_y1-871_z1-978/2020-01-01_12h00m00/"
+path="./TomographicData/PEEK05/processed_x1-901_y1-871_z1-980/2020-01-01_12h00m00/"
 
 filename="fiberStruct_final.pickle"
 
 saveData=False
 
-with open(path+filename,'rb') as f:
+saveFigures=True
+
+if saveFigures:
+    outputPathFigures=os.path.join(path,"FiguresFiberStats")
+
+    if not os.path.exists(outputPathFigures):
+        os.mkdir(outputPathFigures)
+
+
+with open(os.path.join(path,filename),'rb') as f:
     fiberStruct=pickle.load(f)
 
 fibers=fiberStruct["fiberStruct"]
 
 Vtiff_filename="V_fiberMapCombined_postProcessed.tiff"
 
-with TiffFile(path+Vtiff_filename) as tif:
+with TiffFile(os.path.join(path,Vtiff_filename)) as tif:
     xRes,unitTiff=getTiffProperties(tif) 
 
     if unitTiff=="INCH":
@@ -49,7 +57,8 @@ with TiffFile(path+Vtiff_filename) as tif:
     else:
         raise ValueError("other units values not implemented in getTiffProperties")
 
-length=[]
+length_inPixels=[]
+length_inMicrons=[]
 theta=[]
 phi=[]
 
@@ -59,7 +68,10 @@ for fib in fibers.values():
         'initial_stitched_segment' not in fib.tags:
         fib.length=np.linalg.norm(fib.endPnt-fib.startPnt)
         if not fib.rejected:
-            length.append(fib.length)
+            length_inPixels.append(fib.length)
+            
+            length_inMicrons.append(fib.length*pixelSize_micron)
+
 
             fib.orientationVecNormalized=fib.orientationVec/fib.length
 
@@ -68,14 +80,14 @@ for fib in fibers.values():
             fib.phi=np.degrees(np.arctan2(fib.orientationVecNormalized[1],fib.orientationVecNormalized[0] ))
 
             if fib.theta>90.:
-                fib.theta-=90.
+                raise ValueError("Should never have a theta>90° because the tracking ensures fibers are upright.")
 
             phi.append(fib.phi)
 
             theta.append(fib.theta)
 
 
-print("average length: {:> 8.4f} microns".format(np.mean(length)))
+print("average length: {:> 8.4f} microns".format(np.mean(length_inMicrons)))
 
 fig=plt.figure(figsize=[8,5],num="HistogramLengthAngle")
 
@@ -83,7 +95,7 @@ axBottom_theta = fig.add_subplot(111)
 
 axTop_Length = axBottom_theta.twiny()
 
-histLength=axTop_Length.hist(np.array(length)*pixelSize_micron,bins=400,density=True,alpha=0.6,color="C0", label='Length')
+histLength=axTop_Length.hist(np.array(length_inMicrons),bins=400,density=True,alpha=0.6,color="C0", label='Length')
 histTheta =axBottom_theta.hist(theta,bins=400,density=True,alpha=0.6,color="C3", label='Theta')
 
 smoothLength = uniform_filter1d(histLength[0], size=2)
@@ -119,6 +131,9 @@ axBottom_theta.legend(lns, labs, loc=0)
 
 plt.tight_layout()
 
+if saveFigures:
+    plt.savefig(os.path.join(outputPathFigures,"HistogramLengthAngle.png"))
+
 plt.figure(figsize=[12, 8], num="cumulative distribution function: Length")
 
 plt.plot(histLength[1][:-2],  # x values are not evenly spaced
@@ -131,6 +146,8 @@ plt.xlabel("Lengths (microns)")
 plt.xticks([val for val in range(0,401,50)])
 plt.grid("minor")
 
+if saveFigures:
+    plt.savefig(os.path.join(outputPathFigures,"CDF_Length.png"))
 
 plt.figure(figsize=[12, 8], num="cumulative distribution function: angle Theta")
 
@@ -144,21 +161,28 @@ plt.xlabel("Deviation angle (degrees)")
 plt.xticks([val for val in range(0,91,15)])
 plt.grid("minor")
 
+if saveFigures:
+    plt.savefig(os.path.join(outputPathFigures,"CDF_Theta.png"))
+
 plt.figure(figsize=[8,8],num="length vs deviation")
 
-plt.scatter(length, theta,s=1)
+plt.scatter(length_inMicrons, theta,s=1)
 plt.xlabel(r"Length ($\mu m$)")
 plt.ylabel("Deviation angle (degrees)")
 plt.tight_layout()
 
+if saveFigures:
+    plt.savefig(os.path.join(outputPathFigures,"lengthVSdeviation.png"))
 
 plt.figure(figsize=[8,8],num="Length vs azimuthal angle")
 
-plt.scatter(length, phi,s=1)
+plt.scatter(length_inMicrons, phi,s=1)
 plt.xlabel(r"Length ($\mu m$)")
 plt.ylabel("Azimuthal angle (degrees)")
 plt.tight_layout()
 
+if saveFigures:
+    plt.savefig(os.path.join(outputPathFigures,"LengthVSazimuthalAngle.png"))
 
 plt.figure(figsize=[8,8],num="Deviation vs azimuthal angle")
 
@@ -166,6 +190,9 @@ plt.scatter(theta, phi,s=1)
 plt.xlabel("Deviation angle (degrees)")
 plt.ylabel("Azimuthal angle (degrees)")
 plt.tight_layout()
+
+if saveFigures:
+    plt.savefig(os.path.join(outputPathFigures,"DeviationVSazimuthalAngle.png"))
 
 fig=plt.figure(figsize=[8,8], num="throwaway histogram")
 
@@ -188,7 +215,7 @@ else:
     levels=[(np.exp(val/cbarScale)-1)/nBins/nBins for val in range(0,nLevels)]
 
 
-h,x_edges,y_edges,image=plt.hist2d(length, theta,bins=nBins,density=True,cmap=plt.cm.inferno)
+h,x_edges,y_edges,image=plt.hist2d(length_inMicrons, theta,bins=nBins,density=True,cmap=plt.cm.inferno)
 
 plt.close(fig)
 
@@ -198,14 +225,16 @@ data={
     "y_edges"           :y_edges,
     "nFibers"           :len(fibers),
     "nBins"             :nBins,
-    "length"            :length,
-    "theta"             :theta
+    "length_inMicrons"  :length_inMicrons,
+    "theta"             :theta,
+    "phi"               :phi,
+    "pixelSize_micron"  :pixelSize_micron
 }
 
 
 if saveData:
     print(f"\tSaving histogram data to disk at: \n{path}")
-    with open(path+"histogramFiberData.pickle","wb") as f:
+    with open(os.path.join(path,"histogramFiberData.pickle"),"wb") as f:
         pickle.dump(data,f,protocol=pickle.HIGHEST_PROTOCOL)
 
 
@@ -245,7 +274,7 @@ else:
     )
 
 # recreate 1d histograms
-axLengths.hist(data["length"], bins=1024,density=True, color=(0.45,0.45,0.45))
+axLengths.hist(data["length_inMicrons"], bins=1024,density=True, color=(0.45,0.45,0.45))
 axTheta.hist(data["theta"], bins=256,orientation="horizontal",color="C0")
 
 ax2D_hist.  set_xlim([xMinLength,xMaxLength])
@@ -282,7 +311,7 @@ cbar1 = plt.colorbar(
 cbar1.set_ticks(levels)
 cbar1.ax.set_yticklabels(["{:1.2f}".format(val*data["nFibers"]) for val in levels])
 
+if saveFigures:
+    plt.savefig(os.path.join(outputPathFigures,"2dHist_singleVariableHistogram.png"))
 
 plt.show()
-
-doTheRest=False

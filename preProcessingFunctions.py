@@ -19,6 +19,23 @@ from trackingFunctions import addFlaggedPixelsToImg,paddingOfImage
 
 import os
 
+def find(dataPath,searchStr,verbose=False,returnFilenames=False):
+
+    pathList=[]
+
+    for dirPath, dirNames, filenames in os.walk(dataPath):
+        if verbose:
+            print("\ndirPath:\t{},\ndirNames:\t{},\nfilenames:\t{}\n".format(dirPath, dirNames, filenames))
+
+        for filename in filenames:
+            if searchStr in filename:
+                if returnFilenames:
+                    pathList.append(os.path.join(dirPath,filename))
+                else:
+                    pathList.append(dirPath)
+
+    return pathList
+
 def count_Tiff_Files(path, extension='.tiff'):
     nbFiles = 0
     fileList = os.listdir(path)
@@ -58,12 +75,8 @@ def imshowoverlay(
     addFlaggedPixelsToImg(imgComp,flaggedPixels,color=color,alpha=alpha)
 
     if makePlot:
-        if withGUI:
-            fig = plt.figure(figsize=[6,6],num=figureName)
-            plt.title(title,fontsize=10)
-        else:
-            plt.figure(figsize=figsize,num=figureName)
-            plt.title(title,fontsize=28)
+        fig = plt.figure(figsize=figsize,num=figureName)
+        plt.title(title,fontsize=10)
 
         plt.imshow(imgComp,cmap="ocean")
         if axisFill:
@@ -102,12 +115,9 @@ def imshowoverlay_RGB(
     addFlaggedPixelsToImg(imgTemp,flaggedPixels,color=color,alpha=alpha)
 
     if makePlot:
-        if withGUI:
-            fig = plt.figure(figsize=[6,6],num=figureName)
-            plt.title(title,fontsize=10)
-        else:
-            plt.figure(figsize=figsize,num=figureName)
-            plt.title(title,fontsize=28)
+        fig = plt.figure(figsize=figsize,num=figureName)
+        plt.title(title,fontsize=10)
+
 
         plt.imshow(imgTemp,cmap="ocean")
         if axisFill:
@@ -135,7 +145,8 @@ def histEqu_CannyDetection(filePath,
     plotCanny_perimeterDetection=False,
     plotCannyEdgeDetection=False,
     plotThresholding=False,
-    withGUI=False):
+    withGUI=False,
+    figsize=[16,16]):
 
     print("\t\thistEqu_CannyDetection(): imSlice={: >4.0f},  in range ({: >4.0f}/{: >4.0f})".format(imSlice,iFirst,iLast) )
 
@@ -166,10 +177,10 @@ def histEqu_CannyDetection(filePath,
 
         if plotThresholding:
             if withGUI:
-                fig_tresholding = plt.figure(figsize=[6,6])
+                fig_tresholding = plt.figure(figsize=figsize)
                 plt.title("Thresholding on original data, imslice={: >4.0f}".format(imSlice), fontsize=10)
             else:
-                plt.figure(figsize=[16,16])
+                plt.figure(figsize=figsize)
                 plt.title("Thresholding on original data, imslice={: >4.0f},  in range ({: >4.0f}/{: >4.0f})".format(imSlice,iFirst,iLast), fontsize=28)
 
             plt.imshow(imgThresh,cmap="binary")
@@ -177,10 +188,10 @@ def histEqu_CannyDetection(filePath,
 
 
             if withGUI:
-                fig_originalData= plt.figure(figsize=[6,6])
+                fig_originalData= plt.figure(figsize=figsize)
                 plt.title("Original data, imslice={: >4.0f}".format(imSlice), fontsize=10)
             else:
-                plt.figure(figsize=[16,16])
+                plt.figure(figsize=figsize)
                 plt.title("Original data, imslice={: >4.0f},  in range ({: >4.0f}/{: >4.0f})".format(imSlice,iFirst,iLast), fontsize=28)
             
             plt.imshow(im,cmap="binary_r")
@@ -311,7 +322,9 @@ def contourDetection(
     SE_edges,
     SE_large,
     plotFloodFilling,
-    withGUI=False):
+    withGUI=False,
+    figsize=[8,8]
+    ):
 
     print("\t\tcontourDetection(): imSlice={: >4.0f},  in range ({: >4.0f}/{: >4.0f})".format(imSlice,iFirst,iLast) )
 
@@ -329,7 +342,7 @@ def contourDetection(
 
     if plotFloodFilling:
         if withGUI:
-            imgTemp=imshowoverlay(edgesPores,V_hist,color=[255,50,50],makePlot=False)
+            imgTemp=imshowoverlay(edgesPores,V_hist,color=[255,50,50],makePlot=False,figsize=figsize)
 
             temp, fig_firstPass = imshowoverlay_RGB(
                 filledSlice,
@@ -337,9 +350,10 @@ def contourDetection(
                 title="First pass floodfill, imSlice={}".format(imSlice),
                 color=[255,250,50],
                 alpha=0.6,
-                withGUI=True)
+                withGUI=True,
+                figsize=figsize)
         else:
-            imgTemp=imshowoverlay(edgesPores,V_hist,color=[255,50,50],makePlot=False)
+            imgTemp=imshowoverlay(edgesPores,V_hist,color=[255,50,50],makePlot=False,figsize=figsize)
 
             imshowoverlay_RGB(
                 filledSlice,
@@ -371,7 +385,7 @@ def contourDetection(
 
     if plotFloodFilling:
         if withGUI:
-            imgTemp=imshowoverlay(edgesPores,V_hist,color=[255,50,50],makePlot=False)
+            imgTemp=imshowoverlay(edgesPores,V_hist,color=[255,50,50],makePlot=False,figsize=figsize)
 
             temp, fig_MultiPass = imshowoverlay_RGB(
                 filledSlice,
@@ -379,17 +393,19 @@ def contourDetection(
                 title="Multi-pass floodfill, imSlice={: >4.0f}".format(imSlice),
                 color=[255,250,50],
                 alpha=0.6,
-                withGUI=True)
+                withGUI=True,
+                figsize=figsize)
 
         else:
-            imgTemp=imshowoverlay(edgesPores,V_hist,color=[255,50,50],makePlot=False)
+            imgTemp=imshowoverlay(edgesPores,V_hist,color=[255,50,50],makePlot=False,figsize=figsize)
 
             imshowoverlay_RGB(
                 filledSlice,
                 imgTemp, 
                 title="Multi-pass floodfill, imSlice={: >4.0f},  in range ({: >4.0f}/{: >4.0f})".format(imSlice,iFirst,iLast),
                 color=[255,250,50],
-                alpha=0.6
+                alpha=0.6,
+                figsize=figsize
                 )
 
         if len(x)>0:

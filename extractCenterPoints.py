@@ -9,13 +9,14 @@ from tifffile import TiffFile,imwrite
 import subprocess
 import pickle
 import json
+import os
 
 from skimage import morphology
 from scipy import ndimage
 
 from trackingFunctions      import watershedTransform,paddingOfImage
 from trackingParameters     import getTrackingParams
-from preProcessingFunctions import paddingOfVolume
+from preProcessingFunctions import paddingOfVolume,find
 
 from centroid import centroidObj, most_frequent
 
@@ -36,10 +37,11 @@ num_coresCentroid  = int(multiprocessing.cpu_count()*2/3)#using all cpu can caus
 def checkIfFilesPresent(path,*files):
 
     allFilesFound=True
+
     for file in files:
-        cmd= ["find",path,"-name",file,"-type","f"]
-        systemCall = subprocess.run(cmd,stdout=subprocess.PIPE)
-        if len(systemCall.stdout)==0:
+        findList=find(path,file)
+
+        if len(findList)==0:            
             allFilesFound=False
 
     return not allFilesFound
@@ -196,7 +198,9 @@ def watershedParallel(
         
         currentProbSlice_=currentProbSlice.copy() #Parallel doesn't allow modifying inputs
 
-        paddingValue=2**15-1#np.mean(currentProbSlice)
+        #use mid range value for padding, for uint8 type
+        paddingValue=2**7-1
+
         currentProbSlice_[currentPoresSlice==1]=paddingValue
         
         paddingWidth=5
@@ -236,7 +240,6 @@ def watershedParallel(
         voxelMap_sliceExpanded=cv.watershed(img,threshMap)
     
         voxelMap_sliceExpanded[voxelMap_sliceExpanded==-1]=2
-
 
         #fix a bug where sometimes a label is given to a pixel outside the original mask
         voxelMap_slice[img[:,:,0]==0]=2 #background marker
@@ -359,7 +362,12 @@ def watershedParallel(
         img=None
 
     toc = time.perf_counter()
-    print(f"\t\twatershed transform performed on slice {imSlice} in {toc - tic:0.2f} seconds on {multiprocessing.current_process().name}")
+    print("\t\twatershed transform performed on slice {} in {} on {}".format(
+        imSlice,
+        time.strftime("%Hh%Mm%Ss", time.gmtime(toc - tic)),
+        multiprocessing.current_process().name
+        )
+    )
 
 
     return voxelMap_slice,img
@@ -414,6 +422,11 @@ def centroidExtractParallel(
         # detect contours in the mask and check if single connected region is present
         cnt = cv.findContours(mask, cv.RETR_EXTERNAL,
             cv.CHAIN_APPROX_SIMPLE)[-2]
+
+        if type(cnt)==tuple:
+            #OpenCV version 4.5.4 returns tuples instead of list
+            cnt=list(cnt)
+
         if len(cnt)>1:
             print("\t\tMarker is more than one connected region, slice number={}, marker={}".format(sliceNumber,marker))
             for iContour,contourObj in enumerate(cnt):
@@ -457,7 +470,13 @@ def centroidExtractParallel(
             plt.show()
 
     toc = time.perf_counter()
-    print(f"\t\tcentroid detection on slice {sliceNumber} in {toc - tic:0.4f} seconds on {multiprocessing.current_process().name}")
+    print("\t\tcentroid detection on slice {} in {} on {}".format(
+        sliceNumber,
+        time.strftime("%Hh%Mm%Ss", time.gmtime(toc - tic)),
+        multiprocessing.current_process().name
+        )
+    )
+
 
     return centroids
 
@@ -513,12 +532,12 @@ def extractCenterPoints(
 
     permutationPaths=["Permutation123/","Permutation132/","Permutation321/"]
 
-    if permutationVec=="123":
-        pathVolumes=commonPath+permutationPaths[0]
-    elif permutationVec=="132":
-        pathVolumes=commonPath+permutationPaths[1]
-    elif permutationVec=="321":
-        pathVolumes=commonPath+permutationPaths[2]
+    if permutationVec=="123":        
+        pathVolumes=os.path.join(commonPath,permutationPaths[0])
+    elif permutationVec=="132":      
+        pathVolumes=os.path.join(commonPath,permutationPaths[1])
+    elif permutationVec=="321":      
+        pathVolumes=os.path.join(commonPath,permutationPaths[2])
 
     print("\n\n\textractCenterPoints() called on dataset:\n {}".format(pathVolumes))
     print("\tReading from disk started")
@@ -581,21 +600,21 @@ def extractCenterPoints(
         zMin=0 #for passing slice of V_pores
 
     if manualRange is not None:
-        offset=manualRange.start
+        offset=max(manualRange.start,zMin)
     else:
-        offset=0
+        offset=zMin
 
     tic = time.perf_counter()
 
     if permutationVec!="123":
-        with TiffFile(pathVolumes+"V_fibers.tiff") as tif:
+        with TiffFile(os.path.join(pathVolumes,"V_fibers.tiff")) as tif:
             V_fibers=np.array(tif.asarray()/255,np.uint8)
 
         # centroid detection only allowed where there hasn't
         # already been a fiber found in permutation123
-        path_to_fiberVolume=commonPath+"Permutation123/V_fibers_masked.tiff"
+        path_to_fiberVolume=os.path.join(commonPath,"Permutation123/V_fibers_masked.tiff")
     else:
-        path_to_fiberVolume=pathVolumes+"V_fibers.tiff"
+        path_to_fiberVolume=os.path.join(pathVolumes,"V_fibers.tiff")
 
     with TiffFile(path_to_fiberVolume) as tif:
 
@@ -643,12 +662,15 @@ def extractCenterPoints(
             else:
                 V_fibers[V_fibers_masked==1]=0
 
-    dilationParams={"dilationRadius_perim":dilationRadius_perim,"dilationRadius_pores":dilationRadius_pores}
-
+    dilationParams_current={"dilationRadius_perim":dilationRadius_perim,"dilationRadius_pores":dilationRadius_pores}
+    
+    print("\tLoading V_pores...")
+    V_pores_loaded_bool=False
+    
     if dilatePores:
         # no need to redo if already present on disk, at correct exclusiveZone and radii
         try:
-            with TiffFile(commonPath+permutationPaths[0]+"V_pores_dilated.tiff") as tif:
+            with TiffFile(os.path.join(commonPath,permutationPaths[0],"V_pores_dilated.tiff")) as tif:
                 descriptionStr_dilatedPores=getTiffProperties(tif,getDescription=True)[2] 
 
             dilatedPoresFileFound=True
@@ -664,22 +686,22 @@ def extractCenterPoints(
 
         if tempStr !="Not found":
             if "dilationRadius" in descriptionStr_dilatedPores:
-                # this is so it remains reverse compatible with previous implementation #TODO remove clause
                 tempStr,dilationParamsStr=tempStr.split(",\n")
                 dilationParams_fromFile=json.loads(dilationParamsStr.split("dilationParams\":")[1])
             else:
-                dilationParams_fromFile=dilationParams #to make reverse compatible #TODO remove
+                raise ValueError("Missing info in Tiff file description")
 
             exclusiveZone_fromFile=json.loads(tempStr) if tempStr !="None" else None
 
         else:
             exclusiveZone_fromFile=None
-            dilationParams_fromFile=dilationParams #to make reverse compatible #TODO remove
+            dilationParams_fromFile=dilationParams_current #to make reverse compatible #TODO remove
 
-        if dilatedPoresFileFound and exclusiveZone_fromFile==exclusiveZone and dilationParams_fromFile==dilationParams:
+        if dilatedPoresFileFound and exclusiveZone_fromFile==exclusiveZone and dilationParams_fromFile==dilationParams_current:
             print("\tV_pores_dilated found on disk at correct exclusiveZone and dilation parameters, loading...")
-            with TiffFile(commonPath+permutationPaths[0]+"V_pores_dilated.tiff") as tif:
+            with TiffFile(os.path.join(commonPath,permutationPaths[0],"V_pores_dilated.tiff")) as tif:
                 V_pores=np.array(tif.asarray()/255,np.uint8)
+                V_pores_loaded_bool=True
             
             if permutationVec != "123":
                 if permutationVec=="132":
@@ -699,26 +721,32 @@ def extractCenterPoints(
             if dilatedPoresFileFound:
                 if exclusiveZone_fromFile!=exclusiveZone:
                     print("exclusive zones do not match the one previously used, redo pore dilation")
-                if dilationParams_fromFile!=dilationParams:
+                if dilationParams_fromFile!=dilationParams_current:
                     print("dilation parameters do not match the one previously used, redo pore dilation")
 
 
-    print("\tLoading V_pores...")
-    with TiffFile(pathVolumes+"V_pores.tiff") as tif:
-        V_pores=np.array(tif.asarray()/255,np.uint8)
-
     try:
-        with TiffFile(pathVolumes+"V_perim.tiff") as tif:
+        with TiffFile(os.path.join(pathVolumes,"V_perim.tiff")) as tif:
             V_perim=np.array(tif.asarray()/255,np.uint8)
     except:
-        V_perim=[]    # wont exist if not created in preprocessing
+        V_perim=None    # wont exist if not created in preprocessing
+
+
+    if not V_pores_loaded_bool: 
+        # in the case where pore dilation is not used  (dilatePores=false in trackingParams.json)
+        # we need to load it here
+        with TiffFile(os.path.join(pathVolumes,"V_pores.tiff")) as tif:
+            V_pores=np.array(tif.asarray()/255,np.uint8)
+        if exclusiveZone:
+            # V_pores_dilated will already be at correct truncation with regards to exclusiveZone
+            V_pores=V_pores[zMin:zMax,xMin:xMax,yMin:yMax]
+
+    if exclusiveZone and V_perim is not None:
+        V_perim=V_perim[zMin:zMax,xMin:xMax,yMin:yMax]
+    
 
     if dilatePores:
-        if 1 in V_pores or 1 in V_perim: # no need to process if no pores are present
-            if exclusiveZone:
-                V_pores=V_pores[zMin:zMax,xMin:xMax,yMin:yMax]
-                if V_perim is not None:
-                    V_perim=V_perim[zMin:zMax,xMin:xMax,yMin:yMax]
+        if 1 in V_pores: # no need to process if no pores are present
 
             paddingSize=dilationRadius_pores*2
             SE_ball3D=morphology.ball(dilationRadius_pores, dtype=np.uint8)
@@ -748,9 +776,10 @@ def extractCenterPoints(
 
             descriptionStr=\
                 "{"+"\"shape([z,x,y])\":[{},{},{}],\n\"manualRange\":{},\n\"exclusiveZone\":{},\n\"dilationParams\":{}"\
-                .format(*V_pores.shape,manualRange,exclusiveZone,dilationParams)
+                .format(*V_pores.shape,manualRange,exclusiveZone,dilationParams_current)
 
-            imwrite(pathVolumes+'V_pores_dilated.tiff',
+            imwrite(
+                os.path.join(pathVolumes,'V_pores_dilated.tiff'),
                 V_pores*255,
                 resolution=(xRes,xRes,unitTiff),
                 description=descriptionStr,
@@ -765,7 +794,7 @@ def extractCenterPoints(
 
     if useProbabilityMap:
         print("\tLoading V_prob...")
-        with TiffFile(pathVolumes+"V_prob.tiff") as tif:
+        with TiffFile(os.path.join(pathVolumes,"V_prob.tiff")) as tif:
             V_prob=np.array(tif.asarray())
     
     else:
@@ -773,11 +802,19 @@ def extractCenterPoints(
 
 
     if manualRange is None:
-        V_voxels=np.empty(V_fibers.shape,np.int32 )
+        V_voxels=np.ones(V_fibers.shape,np.int32 )*2 # initialize to background value
         manualRangeDict={"start":0,"end":V_fibers.shape[0]} # all slices, full width in x and y
 
     else:
-        V_voxels=np.empty((zMax-zMin,xMax-xMin,yMax-yMin),np.int32 )
+        if exclusiveZone is None and manualRange is not None:
+            xMin=0
+            xMax=V_fibers.shape[1]
+            yMin=0
+            yMax=V_fibers.shape[2]
+            zMin=manualRange.start
+            zMax=manualRange.stop
+
+        V_voxels=np.ones((zMax-zMin,xMax-xMin,yMax-yMin),np.int32 )*2 # initialize to background value
         manualRangeDict={"start":manualRange.start,"end":manualRange.stop}
     
     # format in a way that is readable for .tiff file properties in file explorer
@@ -791,7 +828,7 @@ def extractCenterPoints(
         }
 
     if plotInitialAndResults or plotExpansion:
-        with TiffFile(pathVolumes+"V_hist.tiff") as tif:
+        with TiffFile(os.path.join(pathVolumes,"V_hist.tiff")) as tif:
             V_hist=np.array(tif.asarray(),np.uint8)
     else:
         V_hist=None
@@ -818,11 +855,16 @@ def extractCenterPoints(
             V_img=np.empty((zMax-zMin,xMax-xMin,yMax-yMin,3),np.uint8 )
 
 
-    if manualRange is None:
-        nSlices=range(V_fibers.shape[0])
-    else:
-        nSlices=manualRange
 
+    skipList=[]
+    for i,imSlice in enumerate(V_fibers):
+        if 1 not in imSlice:
+            skipList.append(i)
+
+    if manualRange is None:
+        nSlices=[i for i in range(V_fibers.shape[0]) if i not in skipList]
+    else:
+        nSlices=[i for i in manualRange if i not in skipList]
 
     ticWatershed=time.perf_counter()
 
@@ -839,7 +881,7 @@ def extractCenterPoints(
                     getSlice(V_fibers,imSlice,xRange,yRange),
                     getSlice(V_hist,imSlice,xRange,yRange),
                     imSlice,
-                    nSlices,
+                    range(min(nSlices),max(nSlices)),
                     initialWaterLevel,
                     waterLevelIncrements,
                     convexityDefectDist,
@@ -858,21 +900,19 @@ def extractCenterPoints(
 
             print("\n\t\tunpacking results from all processes")
 
-            for imSlice,resultTuple in enumerate(results):
+            for imSlice,resultTuple in zip(nSlices,results):
 
-                V_voxels[imSlice,:,:]=resultTuple[0]    # voxelMap_slice
+                V_voxels[imSlice-offset,:,:]=resultTuple[0]    # voxelMap_slice
 
                 if plotCentroids:
-                    V_img[imSlice,:,:,:]=resultTuple[1] # img
+                    V_img[imSlice-offset,:,:,:]=resultTuple[1] # img
 
             #save temporary file, as the next step sometimes hangs forever
             print("\tSaving temporary file to disk")
 
-            pathCenterPointsData=pathVolumes+"V_voxelMapTEMP.pickle"
+            pathCenterPointsData=os.path.join(pathVolumes,"V_voxelMapTEMP.pickle")
             with open(pathCenterPointsData, "wb") as f:
                 pickle.dump(V_voxels, f, protocol=pickle.HIGHEST_PROTOCOL)
-
-            #TODO: sometimes it hangs here forever... don't know why
 
         else:
 
@@ -886,7 +926,7 @@ def extractCenterPoints(
                         currentSlice,
                         currentHist,
                         imSlice,
-                        nSlices,
+                        range(min(nSlices),max(nSlices)),
                         initialWaterLevel,
                         waterLevelIncrements,
                         convexityDefectDist,
@@ -910,7 +950,7 @@ def extractCenterPoints(
                     V_img[imSlice-offset,:,:,:]=img
     else: #watershed was performed before, but could not proceed with following steps
         print("\ttemporaty file was found in disk, resuming from completed watershed transform...\n")
-        with open(pathVolumes+'V_voxelMapTEMP.pickle', "rb") as f:
+        with open(os.path.join(pathVolumes,'V_voxelMapTEMP.pickle'), "rb") as f:
             V_voxels  = pickle.load(f)       
 
 
@@ -937,7 +977,7 @@ def extractCenterPoints(
     if parallelHandle:
         # for large dataset, there is a strange bug where these processes 
         # hang at 0% cpu forever, without crashing. setting timeout to 10 min 
-        # make this obvious, witout solving the underlying cause
+        # make this obvious, without solving the underlying cause
         # TODO remove this warning if manually teminating previous processes solved the problem
         centroidsTemp = Parallel(n_jobs=num_coresCentroid,timeout=600.)\
             (delayed(centroidExtractParallel)\
@@ -966,8 +1006,7 @@ def extractCenterPoints(
     #delete temporary file
     deleteTempFile=not(checkIfFilesPresent(pathVolumes,'V_voxelMapTEMP.pickle'))
     if deleteTempFile:
-        cmd= ["rm",pathVolumes+"V_voxelMapTEMP.pickle"]
-        systemCall = subprocess.run(cmd,stdout=subprocess.PIPE)
+        os.remove(os.path.join(pathVolumes,"V_voxelMapTEMP.pickle"))
 
     return V_voxels,centroids,xRes,unitTiff,descriptionDict,times_centroids
 

@@ -6,13 +6,18 @@ Automated segmentation tool for the extraction of individual fibers in short fib
 
 This project has been tested on Python 3.7 and 3.8. The packages and recommended versions are found in the requirements.txt . If those packages conflict with your installation, consider using this project in it's own environment. 
 
+(the following notation indicates running a command in terminal)
+$ <command>
+
+Install requirements:
+
 $ python3 -m pip install -r requirements.txt
 
 On windows, OpenCV from pip should work:
 
 $ python3 -m pip install opencv-python
 
-On Linux, you may need to build OpenCV from source. Please see: https://docs.opencv.org/4.5.3/d7/d9f/tutorial_linux_install.html
+On Linux, if installing opencv-python with the above command fails, you may need to build OpenCV from source. Please see: https://docs.opencv.org/4.5.3/d7/d9f/tutorial_linux_install.html
 
 # Run extraction on the sample data provided
 
@@ -24,13 +29,13 @@ $ python3 getRemoteData.py
 
 ## Pre-process sample data set: PEEK 5 wt.%CF
 
-The parameters for pre-processing of all data sets are in the file preProcessing.py. Executing as-is will process PEEK05 sub folder. Uncomment another line from 53-60 to select another data folder. 
+The parameters for pre-processing of all data sets are in the file preProcessing.py. Executing as-is will process PEEK05 sub-folder. Un-comment another line from 53-60 to select another data folder. 
 
 $ python3 preProcessing.py
 
 ## Pre-segmentation with Insegt
 
-run script InsegtFiber_3D.m in matlab (tested on R2018a). Again, the sub folder with PEEK05 is pre-selected. Uncomment another line from 35-41 to select another data folder. The output of Insegt will be in a folder with the ranges in x, y and z in the folder name, in a second folder with the date and time, so they are not overwritten if Insegt is run again with different parameters. 
+Run script InsegtFiber_3D.m in Matlab (tested on R2016b, R2018a). Again, the sub folder with PEEK05 is pre-selected, and will be processed if the file is run as-is. Un-comment another line from 35-41 to select another data folder than PEEK05. The output of Insegt will be in a folder with the ranges in x, y and z in the folder name, in a second folder with the date and time, so they are not over-written if Insegt is run again with different parameters. By default, this code will run across multiple workers. This uses a large amount of RAM. Manually set the variable nPool to 1 or 2 to reduce RAM requirements.  
 
 ## Processing
 
@@ -38,7 +43,9 @@ Script main.py finds datasets processed with Insegt, but haven't been tracked, a
 
 $ python3 main.py
 
-The file PropertyMaps can be visualized with Paraview. 
+For each subfolder identified by main.py, the entire processing will be attempted. If it is interrupted for some reason, relaunching main.py will start from the last completed steps. For each dataset, once the processing is completed, files fiberStruct_final.pickle and PropertyMaps.vtk are generated. The file PropertyMaps.vtk can be visualized with Paraview. The deviation and length information is encoded in different fields.
+
+If the 3D renderings are not required, variables randomizeFiberMap and makeVTKfiles can be set to False in the main.py file. This will make the final step much faster. fiberStatistics.py will still work, using fiberStruct_final.pickle. 
 
 ## Plotting results
 
@@ -59,24 +66,4 @@ Place the tiff files of your scans in their own path in:
 To find the preprocessing parameters, run the GUI application and follow instructions in:
 
 $ python3 preProcessing_GUI.py
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
