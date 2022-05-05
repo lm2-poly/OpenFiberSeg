@@ -455,7 +455,7 @@ def combinePermutations(
             fib.oriVec_normalized=fib.orientationVec/np.linalg.norm(fib.orientationVec)
             oriVecAll[int(fiberID)]=fib.oriVec_normalized
 
-    collisionsDict,V_fiberMap=collisionDetectionWrapper(
+    collisionsDict,V_fiberMapCompactified=collisionDetectionWrapper(
         postProcessQueue,
         minCountCombination,
         angleCombineDEG,
