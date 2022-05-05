@@ -1,6 +1,5 @@
 # by Facundo Sosa-Rey, 2021. MIT license
 
-from pickle import TRUE
 import numpy as np
 import os
 from datetime import date
@@ -372,7 +371,7 @@ filename    ={}
 filename={imSlice:formatStr.format(imSlice) for imSlice in range(iFirst,iLast+1) }
 
 
-with TiffFile(commonPath+pathRawData+filename[iFirst]) as tif:
+with TiffFile(os.path.join(commonPath,pathRawData,filename[iFirst])) as tif:
     xRes,unitTiff=getTiffProperties(tif)
 
 
@@ -415,15 +414,15 @@ print('\n\tPre-allocation completed')
 
 filesInDir = [f.path for f in os.scandir(commonPath) if f.is_dir()]
 
-if commonPath+outputFolderName not in filesInDir:
-    os.mkdir(commonPath+outputFolderName)
+if os.path.join(commonPath,outputFolderName) not in filesInDir:
+    os.mkdir(os.path.join(commonPath,outputFolderName))
 
 
 print('\n\tHistogram equalization and Canny edge detection started')
 
 results = Parallel(n_jobs=num_cores)\
     (delayed(histEqu_CannyDetection)\
-        (commonPath+pathRawData+filename[imSlice],
+        (os.path.join(commonPath,pathRawData,filename[imSlice]),
         imSlice,iFirst,iLast,pixelRangeX,pixelRangeY,
         findExternalPerimeter,
         findPores,
@@ -600,7 +599,7 @@ if findPores:
 
     porosity=volumeInPores/volumeInFilament
 
-    print("Total porosity detected in volume: {: >8.2f}".format(porosity))
+    print("Total porosity detected in volume: {: >8.2f}%".format(porosity*100.))
 
     ##########################################
 else:
@@ -613,14 +612,14 @@ if savePreprocessingData:
 
     print('\n\tWriting to disk started')
     
-    print("\n\t\tWriting output to : \n\t "+commonPath+outputFolderName)
+    print("\n\t\tWriting output to : \n\t{}".format(os.path.join(commonPath,outputFolderName)))
 
     descriptionStr="{"+"\"shape([x,y,z])\":[{},{},{}]".format(*(V_original.shape))+"}"
 
     print("\t\twriting V_original.tiff")
 
     tifffile.imwrite(
-        commonPath+outputFolderName+'/V_original.tiff',
+        os.path.join(commonPath,outputFolderName,'V_original.tiff'),
         np.transpose(V_original,(2,0,1)),
         resolution=(xRes,xRes,unitTiff),
         compress=True,
@@ -630,7 +629,7 @@ if savePreprocessingData:
     print("\t\twriting V_hist.tiff")
 
     tifffile.imwrite(
-        commonPath+outputFolderName+'/V_hist.tiff',
+        os.path.join(commonPath,outputFolderName,'V_hist.tiff'),
         np.transpose(V_hist,(2,0,1)),
         resolution=(xRes,xRes,unitTiff),
         compress=True,
@@ -640,7 +639,7 @@ if savePreprocessingData:
     print("\t\twriting V_pores.tiff")
 
     tifffile.imwrite(
-        commonPath+outputFolderName+'/V_pores.tiff',
+        os.path.join(commonPath,outputFolderName,'V_pores.tiff'),
         np.transpose(V_pores,(2,0,1)),
         resolution=(xRes,xRes,unitTiff),
         compress=True,
@@ -653,7 +652,7 @@ if savePreprocessingData:
         print("\t\twriting V_perim.tiff")
 
         tifffile.imwrite(
-            commonPath+outputFolderName+'/V_perim.tiff',
+            os.path.join(commonPath,outputFolderName,'V_perim.tiff'),
             np.transpose(V_perim,(2,0,1)),
             resolution=(xRes,xRes,unitTiff),
             compress=True,
@@ -683,8 +682,8 @@ if savePreprocessingData:
         "commonPath"                :commonPath,
     }
 
-    with open(commonPath+outputFolderName+'/preProcessingParams.json', "w") as f:
-                json.dump(params, f, sort_keys=False, indent=4)
+    with open(os.path.join(commonPath,outputFolderName,'preProcessingParams.json'), "w") as f:
+        json.dump(params, f, sort_keys=False, indent=4)
 
     print('\tWriting to disk completed')
 

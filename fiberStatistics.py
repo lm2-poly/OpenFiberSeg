@@ -40,15 +40,14 @@ if saveFigures:
         os.mkdir(outputPathFigures)
 
 
-
-with open(path+filename,'rb') as f:
+with open(os.path.join(path,filename),'rb') as f:
     fiberStruct=pickle.load(f)
 
 fibers=fiberStruct["fiberStruct"]
 
 Vtiff_filename="V_fiberMapCombined_postProcessed.tiff"
 
-with TiffFile(path+Vtiff_filename) as tif:
+with TiffFile(os.path.join(path,Vtiff_filename)) as tif:
     xRes,unitTiff=getTiffProperties(tif) 
 
     if unitTiff=="INCH":
@@ -235,7 +234,7 @@ data={
 
 if saveData:
     print(f"\tSaving histogram data to disk at: \n{path}")
-    with open(path+"histogramFiberData.pickle","wb") as f:
+    with open(os.path.join(path,"histogramFiberData.pickle"),"wb") as f:
         pickle.dump(data,f,protocol=pickle.HIGHEST_PROTOCOL)
 
 
@@ -316,5 +315,3 @@ if saveFigures:
     plt.savefig(os.path.join(outputPathFigures,"2dHist_singleVariableHistogram.png"))
 
 plt.show()
-
-doTheRest=False

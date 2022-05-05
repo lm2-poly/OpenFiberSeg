@@ -47,7 +47,6 @@ def assignVoxelsToFibers_Main(
     makePlots=False,
     parallelHandle=True,
     verbose=False,
-    addDisksAroundCenterPnts=False,
     textLabels=True 
     ):
 
@@ -55,7 +54,11 @@ def assignVoxelsToFibers_Main(
 
     tic = time.perf_counter()
 
-    filesInDir = [f.path for f in os.scandir(commonPath+permutationPath) if f.is_file()]
+    params=getTrackingParams(commonPath,"extractionParams")
+
+    addDisksAroundCenterPnts=params["addDisksAroundCenterPnts"]
+
+    filesInDir = [f.path for f in os.scandir(os.path.join(commonPath,permutationPath)) if f.is_file()]
     watershedFound=False
     fiberStructFound=False
     for i,iPath in enumerate(filesInDir):
@@ -80,10 +83,10 @@ def assignVoxelsToFibers_Main(
             indexWaterJson=i
 
     if not fiberStructFound:
-        raise FileNotFoundError("fiberStruct.json not found in \n"+commonPath+permutationPath)
+        raise FileNotFoundError("fiberStruct.json not found in \n"+os.path.join(commonPath,permutationPath))
 
     if not watershedFound:
-        raise FileNotFoundError("watershedCenterPoints.json not found in\n"+commonPath+permutationPath)
+        raise FileNotFoundError("watershedCenterPoints.json not found in\n"+os.path.join(commonPath,permutationPath))
 
     with open(filesInDir[indexWaterJson], "r") as f:
 
@@ -96,7 +99,7 @@ def assignVoxelsToFibers_Main(
         watershedData  = pickle.load(f)
 
     if permutationPath!="Permutation123/":
-        with TiffFile(commonPath+"Permutation123/V_fibers_masked.tiff") as tif:
+        with TiffFile(os.path.join(commonPath,"Permutation123/V_fibers_masked.tiff")) as tif:
             V_fibers_masked=tif.asarray() #already clipped to exclusiveZone
 
             if permutationPath=="Permutation132/":
@@ -163,6 +166,8 @@ def assignVoxelsToFibers_Main(
     descriptionStr="{"+"\"shape([z,x,y])\":[{},{},{}],\n\"manualRange\":{},\n\"exclusiveZone\":{}".\
         format(*V_voxelMap.shape,manualRange,fiberStruct["exclusiveZone"])
 
+    descriptionStr+="}"
+    
     toc = time.perf_counter()
 
     times_assign={"parallelHandle":parallelHandle}
@@ -329,6 +334,12 @@ def assignVoxelsToFibers_Main(
                 
                 V_fiberMap.append(resTuple[1])
 
+            for proc in multiprocessing.active_children():
+                # Manual termination of processes
+                print(f"\tforced termination of process {proc.name}")
+                proc.terminate()
+                proc.join()
+
         else:
             for imSlice in slicesRange:
 
@@ -356,6 +367,11 @@ def assignVoxelsToFibers_Main(
     V_fiberMap=np.array(V_fiberMap,np.int32)
 
     times_assign["assignVoxelsToFibers call:"]=time.strftime("%Hh%Mm%Ss", time.gmtime(tocAssign-ticAssign))
-    print(f"\tassignVoxelsToFibers call complete in {tocAssign-ticAssign:0.4f} seconds\n")
 
+    print("\t\tassignVoxelsToFibers call complete in {} on {}".format(
+        times_assign["assignVoxelsToFibers call:"],
+        multiprocessing.current_process().name
+        )
+    )
+    
     return V_fiberMap,fiberStruct,xRes,unitTiff,descriptionStr,times_assign

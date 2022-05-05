@@ -183,7 +183,7 @@ def compactify(commonPath,permutationPaths,parallelHandle=False):
 
     ### permutation123
 
-    filesInDir = [f.path for f in os.scandir(commonPath+permutationPath) if f.is_file()]
+    filesInDir = [f.path for f in os.scandir(os.path.join(commonPath,permutationPath)) if f.is_file()]
 
     indexFiberMaptiff123=None
     fiberStrucPickle123 =None
@@ -196,7 +196,7 @@ def compactify(commonPath,permutationPaths,parallelHandle=False):
 
     if indexFiberMaptiff123 is None or \
         fiberStrucPickle123 is None:
-        raise FileNotFoundError(f"missing files in {commonPath+permutationPath}")
+        raise FileNotFoundError(f"missing files in {os.path.join(commonPath,permutationPath)}")
 
 
     with TiffFile(filesInDir[indexFiberMaptiff123]) as tif:
@@ -299,7 +299,7 @@ def compactify(commonPath,permutationPaths,parallelHandle=False):
     permutationIndex=1
     permutationPath=permutationPaths[permutationIndex]
 
-    filesInDir = [f.path for f in os.scandir(commonPath+permutationPath) if f.is_file()]
+    filesInDir = [f.path for f in os.scandir(os.path.join(commonPath,permutationPath)) if f.is_file()]
 
     for i,iPath in enumerate(filesInDir):
         if "V_fiberMap_postProcessed.tiff" in iPath:
@@ -365,7 +365,7 @@ def compactify(commonPath,permutationPaths,parallelHandle=False):
     permutationIndex=2
     permutationPath=permutationPaths[permutationIndex]
 
-    filesInDir = [f.path for f in os.scandir(commonPath+permutationPath) if f.is_file()]
+    filesInDir = [f.path for f in os.scandir(os.path.join(commonPath,permutationPath)) if f.is_file()]
     
     for i,iPath in enumerate(filesInDir):
         if "V_fiberMap_postProcessed.tiff" in iPath:

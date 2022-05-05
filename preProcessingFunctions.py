@@ -19,6 +19,23 @@ from trackingFunctions import addFlaggedPixelsToImg,paddingOfImage
 
 import os
 
+def find(dataPath,searchStr,verbose=False,returnFilenames=False):
+
+    pathList=[]
+
+    for dirPath, dirNames, filenames in os.walk(dataPath):
+        if verbose:
+            print("\ndirPath:\t{},\ndirNames:\t{},\nfilenames:\t{}\n".format(dirPath, dirNames, filenames))
+
+        for filename in filenames:
+            if searchStr in filename:
+                if returnFilenames:
+                    pathList.append(os.path.join(dirPath,filename))
+                else:
+                    pathList.append(dirPath)
+
+    return pathList
+
 def count_Tiff_Files(path, extension='.tiff'):
     nbFiles = 0
     fileList = os.listdir(path)

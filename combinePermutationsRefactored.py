@@ -1,23 +1,21 @@
 # by Facundo Sosa-Rey, 2021. MIT license
 
-from logging import error
-from tifffile.tifffile import OpenFileCache, imwrite
+import multiprocessing
+from tifffile.tifffile import imwrite
 from extractCenterPoints    import getTiffProperties
-from visualisationTool      import makeLegend
 from fibers                 import fiberObj
 from trackingFunctions      import fiberPloting
 from trackingParameters     import getTrackingParams
-from combineFunctions       import findCollisions,compactify
+from combineFunctions       import compactifySlice,findCollisions,compactify
 from postProcessing         import collisionDetectionWrapper
 
 from tifffile import TiffFile,imwrite
 import pickle
-import subprocess
+from joblib import Parallel, delayed  
 import os
 import time
 import numpy as np
 
-from mayavi import mlab
 
 def combinePermutations(
     commonPath,
@@ -72,21 +70,24 @@ def combinePermutations(
 
         print(f"\tWriting compactified fiberMap to disk at\n {commonPath}V_fiberMapCompactified.tiff")
 
-        imwrite(commonPath+'V_fiberMapCompactified.tiff',
+        imwrite(
+            os.path.join(commonPath,'V_fiberMapCompactified.tiff'),
             V_fiberMapCompactified,
             resolution=(xRes,xRes,unitTiff),
             description=descriptionStr,
             compress=True
             )
 
-        imwrite(commonPath+'V_fiberMap132_Compactified.tiff',
+        imwrite(
+            os.path.join(commonPath,'V_fiberMap132_Compactified.tiff'),
             V_fiberMap132,
             resolution=(xRes,xRes,unitTiff),
             description=descriptionStr,
             compress=True
             )
 
-        imwrite(commonPath+'V_fiberMap321_Compactified.tiff',
+        imwrite(
+            os.path.join(commonPath,'V_fiberMap321_Compactified.tiff'),
             V_fiberMap321,
             resolution=(xRes,xRes,unitTiff),
             description=descriptionStr,
@@ -101,7 +102,7 @@ def combinePermutations(
             "exclusiveZone"           :exclusiveZone
         }
 
-        with open(commonPath+"fiberStruct_compactified.pickle","wb") as f:
+        with open(os.path.join(commonPath,"fiberStruct_compactified.pickle"),"wb") as f:
             pickle.dump(fiberStructPickle,f,protocol=pickle.HIGHEST_PROTOCOL)
 
     else:
@@ -138,7 +139,7 @@ def combinePermutations(
 
     ### permutation123
 
-    filesInDir = [f.path for f in os.scandir(commonPath+permutationPath) if f.is_file()]
+    filesInDir = [f.path for f in os.scandir(os.path.join(commonPath,permutationPath)) if f.is_file()]
     watershedFound=False
 
     if makePlot:
@@ -149,7 +150,7 @@ def combinePermutations(
                 indexHistTiff123=i
 
         if indexHistTiff123 is None :
-            raise FileNotFoundError(f"missing files in {commonPath+permutationPath}")
+            raise FileNotFoundError(f"missing files in {os.path.join(commonPath,permutationPath)}")
 
         with TiffFile(filesInDir[indexHistTiff123]) as tif:
             V_hist=tif.asarray()/255
@@ -363,7 +364,7 @@ def combinePermutations(
                     for fiberID_toReplace in fib.extendedBy:
 
                         marker_toReplace=int(fiberID_toReplace)
-
+                        #no need to do this one in parallel, as typically very few fibers are concerned
                         V_fiberMapCompactified[V_fiberMapCompactified==marker_toReplace]=marker_toKeep
 
 
@@ -373,15 +374,39 @@ def combinePermutations(
 
         # Reassign markers in V_fiberMapCombined with the new stitched fibers
 
-        for fib in fiberStructExtended.values():#TODO use the method in compactify, to speedup this part
+        print("\tReassign markers in V_fiberMapCombined with the new stitched fibers")
+
+        currentMarkers=np.unique(V_fiberMapCompactified)
+        #by default, each marker points to itself
+        compactifyIDs_LUT={m:m for m in currentMarkers}
+
+        for fib in fiberStructExtended.values():
             if not fib.addedTo:
                 fiberID_toKeep=fib.fiberID
                 marker_toKeep   =int(fiberID_toKeep)
                 for fiberID_toReplace in fib.extendedBy:
 
                     marker_toReplace=int(fiberID_toReplace)
+                    compactifyIDs_LUT[marker_toReplace]=marker_toKeep
 
-                    V_fiberMapCompactified[V_fiberMapCompactified==marker_toReplace]=marker_toKeep
+                    # V_fiberMapCompactified[V_fiberMapCompactified==marker_toReplace]=marker_toKeep
+
+        if parallelHandle:
+            num_cores=min(int(multiprocessing.cpu_count())-2,48)
+        else:
+            num_cores=1
+
+        results = Parallel(n_jobs=num_cores)\
+            (delayed(compactifySlice)\
+                (
+                    V_fiberMapCompactified[iSlice],
+                    compactifyIDs_LUT
+                )for iSlice in range(V_fiberMapCompactified.shape[0]) )
+
+        for iSlice,resTuple in enumerate(results):
+            V_fiberMapCompactified[iSlice]=resTuple
+
+        print("\tReassign markers finished in V_fiberMapCombined")
 
 
     ########################################################################
@@ -446,7 +471,8 @@ def combinePermutations(
 
     print(f"Writing to disk: {commonPath}V_fiberMapCombined_postProcessed.tiff")
 
-    imwrite(commonPath+'V_fiberMapCombined_postProcessed.tiff',
+    imwrite(
+        os.path.join(commonPath,'V_fiberMapCombined_postProcessed.tiff'),
         V_fiberMapCompactified,
         resolution=(xRes,xRes,unitTiff),
         description=descriptionStr,
@@ -460,14 +486,15 @@ def combinePermutations(
         "exclusiveZone"         :exclusiveZone
     }
 
-    with open(commonPath+"fiberStruct_final.pickle","wb") as f:
+    with open(os.path.join(commonPath,"fiberStruct_final.pickle"),"wb") as f:
         pickle.dump(fiberStructPickle,f,protocol=pickle.HIGHEST_PROTOCOL)
-
-    print()
 
     if makePlot:
 
         import cameraConfig
+        from mayavi import mlab
+        from visualisationTool      import addLegend
+
 
         rangeOutline=[0.,V_hist.shape[1],0.,V_hist.shape[2],0.,V_hist.shape[0] ]
 
@@ -539,8 +566,6 @@ def combinePermutations(
         for fibID,fib in fiberStruct_compactified.items(): 
 
             if fib.colorLabel!="basic_123":
-            # if fib.colorLabel!="basic_123" and fib.fiberID in fiberObj.classAttributes["listFiberIDs_tracked"]:
-            # if fib.suffix!=0.123:
 
                 fiberPloting(fib,fibID,len(fiberStruct_compactified),
                     numFibersTracked,

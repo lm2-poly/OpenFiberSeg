@@ -21,7 +21,8 @@ trackingAndPlottingParams["extractionParams"]={
     "waterLevelIncrements"  :0.1,   # pixels
     "convexityDefectDist"   :1.2,
     "checkConvexityAndSplit":True,
-    "useProbabilityMap"     :True
+    "useProbabilityMap"     :True,
+    "addDisksAroundCenterPnts":True
 }
 
 trackingAndPlottingParams["plottingParams"]={
@@ -202,7 +203,7 @@ def getTrackingParams(commonPath,key,xRes=None,unitTiff=None):
     if indexJson is None:
         #create default param file, write to commonPath
         
-        with open(commonPath+"trackingParams.json", "w") as f:
+        with open(os.path.join(commonPath,"trackingParams.json"), "w") as f:
             json.dump(trackingAndPlottingParams, f, sort_keys=True, indent=4)
 
         params=trackingAndPlottingParams

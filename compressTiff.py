@@ -42,7 +42,7 @@ if __name__ == "__main__":
 
     print("\tprocessing V_fibers.tiff")
 
-    with TiffFile(commonPath+"V_fibers.tiff") as tif:
+    with TiffFile(os.path.join(commonPath,"V_fibers.tiff")) as tif:
         xRes,unitTiff=getTiffProperties(tif)
 
 
@@ -51,7 +51,7 @@ if __name__ == "__main__":
     descriptionStr="{"+"\"shape([x,y,z])\":[{},{},{}]".format(V_fibers.shape[1],V_fibers.shape[2],V_fibers.shape[0])+"}"
 
     tifffile.imwrite(
-        commonPath+"V_fibers.tiff",
+        os.path.join(commonPath,"V_fibers.tiff"),
         V_fibers,
         resolution=(xRes,xRes,unitTiff), #yRes==xRes
         compress=True,
@@ -66,7 +66,7 @@ if __name__ == "__main__":
     print("\tprocessing V_hist.tiff")
 
     if indexHist is not None:
-        with TiffFile(commonPath+"V_hist.tiff") as tif:
+        with TiffFile(os.path.join(commonPath,"V_hist.tiff")) as tif:
             xRes,unitTiff=getTiffProperties(tif)
 
 
@@ -78,7 +78,7 @@ if __name__ == "__main__":
         print("\tdescription: "+descriptionStr)
 
         tifffile.imwrite(
-            commonPath+"V_hist.tiff",
+            os.path.join(commonPath,"V_hist.tiff"),
             V_hist,
             resolution=(xRes,xRes,unitTiff), #yRes==xRes
             compress=True,
@@ -95,7 +95,7 @@ if __name__ == "__main__":
         print("\tprocessing V_perim.tiff")
 
 
-        with TiffFile(commonPath+"V_perim.tiff") as tif:
+        with TiffFile(os.path.join(commonPath,"V_perim.tiff")) as tif:
             xRes,unitTiff=getTiffProperties(tif)
 
             V_perim=np.array(tif.asarray())
@@ -103,7 +103,7 @@ if __name__ == "__main__":
         descriptionStr="{"+"\"shape([x,y,z])\":[{},{},{}]".format(V_perim.shape[1],V_perim.shape[2],V_perim.shape[0])+"}"
 
         tifffile.imwrite(
-            commonPath+"V_perim.tiff",
+            os.path.join(commonPath,"V_perim.tiff"),
             V_perim,
             resolution=(xRes,xRes,unitTiff), #yRes==xRes
             compress=True,
@@ -117,7 +117,7 @@ if __name__ == "__main__":
 
     print("\tprocessing V_pores.tiff")
 
-    with TiffFile(commonPath+"V_pores.tiff") as tif:
+    with TiffFile(os.path.join(commonPath,"V_pores.tiff")) as tif:
         xRes,unitTiff=getTiffProperties(tif)
 
         V_pores=np.array(tif.asarray())
@@ -125,7 +125,7 @@ if __name__ == "__main__":
     descriptionStr="{"+"\"shape([x,y,z])\":[{},{},{}]".format(V_pores.shape[1],V_pores.shape[2],V_pores.shape[0])+"}"
 
     tifffile.imwrite(
-        commonPath+"V_pores.tiff",
+        os.path.join(commonPath,"V_pores.tiff"),
         V_pores,
         resolution=(xRes,xRes,unitTiff), #yRes==xRes
         compress=True,
@@ -138,7 +138,7 @@ if __name__ == "__main__":
 
     print("\tprocessing V_prob.tiff")
 
-    with TiffFile(commonPath+"V_prob.tiff") as tif:
+    with TiffFile(os.path.join(commonPath,"V_prob.tiff")) as tif:
         xRes,unitTiff=getTiffProperties(tif)
 
         V_prob=np.array(tif.asarray())
@@ -146,7 +146,7 @@ if __name__ == "__main__":
     descriptionStr="{"+"\"shape([x,y,z])\":[{},{},{}]".format(V_prob.shape[1],V_prob.shape[2],V_prob.shape[0])+"}"
 
     tifffile.imwrite(
-        commonPath+"V_prob.tiff",
+        os.path.join(commonPath,"V_prob.tiff"),
         V_prob,
         resolution=(xRes,xRes,unitTiff), #yRes==xRes
         compress=True,

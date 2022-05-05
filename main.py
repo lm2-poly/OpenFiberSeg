@@ -1,6 +1,7 @@
 # by Facundo Sosa-Rey, 2021. MIT license
 
 
+import subprocess
 from trackingParameters import getTrackingParams
 from extractCenterPoints import extractCenterPoints, checkIfFilesPresent
 from trackFibers import tracking, saveFiberStruct
@@ -8,12 +9,12 @@ from assignVoxelsToFibers_refactored import assignVoxelsToFibers_Main
 from postProcessing import postProcessingOfFibers
 from combinePermutationsRefactored import combinePermutations
 from outputPropertyMapsRefactored import outputPropertyMap
+from preProcessingFunctions import find
 
 from tifffile import TiffFile
 import tifffile
 import json
 import pickle
-import subprocess
 import os
 import numpy as np
 
@@ -23,19 +24,17 @@ import time
 
 def getCommonPaths(rootPath):
     # finds all files in rootPath that have been preprocessed and pre-segmented with INSEGT, but not tracked, postprocessed and and combined
-    cmd = ["find", rootPath, "-name", "SegtParams.json", "-type", "f"]
-    systemCall = subprocess.run(cmd, stdout=subprocess.PIPE)
-
-    directories = systemCall.stdout.decode("utf-8").split("SegtParams.json\n")
+    directories=find(rootPath,"SegtParams.json")
 
     unProcessedDirectories = []
 
     for dir in directories:
-        if dir:
-            cmd = ["find", dir, "-name", "PropertyMaps.vtk", "-type", "f"]
-            systemCall = subprocess.run(cmd, stdout=subprocess.PIPE)
-            if len(systemCall.stdout) == 0:
-                unProcessedDirectories.append(dir)
+        
+        #check for output directory of last step: fiber fraction adjustment
+        test=find(dir,"adjustingStats.json")
+
+        if len(test)==0:
+            unProcessedDirectories.append(dir)
 
     unProcessedDirectories.sort()
 
@@ -45,7 +44,7 @@ def getCommonPaths(rootPath):
 cmd = "hostname"
 
 # returns output as byte string
-hostnameStr = subprocess.check_output(cmd).decode("utf-8").split("\n")[0]
+hostnameStr = subprocess.check_output(cmd).decode("utf-8").replace("\n","").replace("\r","")
 
 # using decode() function to convert byte string to string
 print('Current hostname is :', hostnameStr)
@@ -60,7 +59,7 @@ dataPath="./TomographicData/"
 
 
 # find directories with dataset processed with Insegt, but not tracked 
-# (will have SegtParams.json file, but not PropertyMaps.vtk, final output)
+# (will have SegtParams.json file, but not PropertyMaps.vtk, the final output)
 directories = getCommonPaths(dataPath)
 
 if directories:
@@ -97,18 +96,19 @@ for commonPath in directories:
 
         permutationVec = permutationVecAll[permutationIndex]
 
-        print("\n initiating Processing on permutation:{}".format(permutationVec))
+        print("\n\tInitiating processing on permutation:{}".format(permutationVec))
 
         ##############################################################################
 
         # extraction of centerpoints with the watershed transform
 
-        # for every step, intermediate results are writen to disk. wont be redone if files found
+        # for every step, results are writen to disk, so that the steps can be redone
+        # independently in the development phase.
 
         ##############################################################################
 
         doExtraction = checkIfFilesPresent(
-            commonPath+permutationPaths[permutationIndex],
+            os.path.join(commonPath,permutationPaths[permutationIndex]),
             'V_voxelMap.tiff',
             "watershedExtractionStats.json",
             "watershedCenterPoints.pickle",
@@ -130,7 +130,7 @@ for commonPath in directories:
                     plotConvexityDefects        =False,
                     plotExpansion               =False, # won't plot if useProbabilityMap==False in trackingParams.json
                     plotOverlayFrom123          =False,
-                    # manualRange                     =range(10),
+                    # manualRange                     =range(10), #used in debugging, process only slice numbers in range
                     exclusiveZone               =exclusiveZone,
                     parallelHandle              =True
                 )
@@ -142,12 +142,15 @@ for commonPath in directories:
                 times_centroids["Entire extractCenterPoints procedure:"] = time.strftime(
                     "%Hh%Mm%Ss", time.gmtime(time.perf_counter()-ticTotal_extraction))
 
-                print("\n\textractCenterPoints():\n\tWriting output to : \n " +
-                    commonPath+permutationPaths[permutationIndex]+'V_voxelMap.tiff')
+                print("\n\textractCenterPoints():\n\tWriting output to : \n {}".format(
+                    os.path.join(commonPath,permutationPaths[permutationIndex],'V_voxelMap.tiff')))
 
                 tifffile.imwrite(
-                    commonPath +
-                    permutationPaths[permutationIndex]+'V_voxelMap.tiff',
+                    os.path.join(
+                        commonPath,
+                        permutationPaths[permutationIndex],
+                        'V_voxelMap.tiff'
+                        ),
                     V_voxels,
                     resolution=(xRes, xRes, unitTiff),
                     description=descriptionDict["descriptionStr"],
@@ -157,20 +160,24 @@ for commonPath in directories:
                 watershedDict = {
                     "times_centroids": times_centroids,
                     "volumeDescription": descriptionDict,
+                    "hostname":hostnameStr
                 }
 
-                pathCenterPointStats = commonPath + \
-                    permutationPaths[permutationIndex] + \
+                pathCenterPointStats = os.path.join(
+                    commonPath,
+                    permutationPaths[permutationIndex],
                     "watershedExtractionStats.json"
+                )
                 with open(pathCenterPointStats, "w") as f:
                     json.dump(watershedDict, f, sort_keys=False, indent=4)
 
-                pathCenterPointsData = commonPath + \
-                    permutationPaths[permutationIndex] + \
+                pathCenterPointsData = os.path.join(
+                    commonPath,
+                    permutationPaths[permutationIndex],
                     "watershedCenterPoints.pickle"
+                    )
                 with open(pathCenterPointsData, "wb") as f:
-                    pickle.dump(watershedData, f,
-                                protocol=pickle.HIGHEST_PROTOCOL)
+                    pickle.dump(watershedData, f,protocol=pickle.HIGHEST_PROTOCOL)
 
         ##############################################################################
 
@@ -179,7 +186,7 @@ for commonPath in directories:
         ##############################################################################
 
         doTracking = checkIfFilesPresent(
-            commonPath+permutationPaths[permutationIndex],
+            os.path.join(commonPath,permutationPaths[permutationIndex]),
             "fiberStats.json",
             "fiberStruct.pickle"
         )
@@ -268,7 +275,7 @@ for commonPath in directories:
                 from visualisationTool import makeVisualisation
 
                 filesInDir = [f.path for f in os.scandir(
-                    commonPath+permutationPaths[permutationIndex]) if f.is_file()]
+                    os.path.join(commonPath,permutationPaths[permutationIndex])) if f.is_file()]
                 for i, iPath in enumerate(filesInDir):
                     if ".tiff" in iPath:
                         if "V_hist.tiff" in iPath:
@@ -328,7 +335,7 @@ for commonPath in directories:
         ##############################################################################
 
         doAssignment = checkIfFilesPresent(
-            commonPath+permutationPaths[permutationIndex],
+            os.path.join(commonPath,permutationPaths[permutationIndex]),
             "V_fiberMap.tiff"
         )
 
@@ -343,11 +350,10 @@ for commonPath in directories:
                 times_assign = assignVoxelsToFibers_Main(
                     commonPath,
                     permutationPaths[permutationIndex],
-                    # manualRange=range(208+300,510),
+                    # manualRange=range(500,510), #used for debugging only a few slices
                     makePlots=False,
                     parallelHandle=True,
                     verbose=False,
-                    addDisksAroundCenterPnts=True
                 )
 
             saveAssignmentData = True
@@ -384,15 +390,16 @@ for commonPath in directories:
                     fiberStats
                 )
 
-                print("\n\tassignVoxelsToFibers():\n\tWriting tiff file to : \n " +
-                    commonPath+permutationPaths[permutationIndex]+'V_fiberMap.tiff')
+                print("\n\tassignVoxelsToFibers():\n\tWriting tiff file to : \n{}".format(
+                    os.path.join(commonPath,permutationPaths[permutationIndex],'V_fiberMap.tiff')))
 
-                tifffile.imwrite(commonPath+permutationPaths[permutationIndex]+'V_fiberMap.tiff',
-                                V_fiberMap,
-                                resolution=(xRes, xRes, unitTiff),
-                                description=descriptionStr,
-                                compress=True
-                                )
+                tifffile.imwrite(
+                    os.path.join(commonPath,permutationPaths[permutationIndex],'V_fiberMap.tiff'),
+                    V_fiberMap,
+                    resolution=(xRes, xRes, unitTiff),
+                    description=descriptionStr,
+                    compress=True
+                )
 
         ##############################################################################
 
@@ -403,7 +410,7 @@ for commonPath in directories:
         makePlotAll = False
 
         doPostProcessing = checkIfFilesPresent(
-            commonPath+permutationPaths[permutationIndex],
+            os.path.join(commonPath,permutationPaths[permutationIndex]),
             "V_fiberMap_postProcessed.tiff"
         )
 
@@ -421,19 +428,22 @@ for commonPath in directories:
                     makePlotsIndividual=False,# cant be done in parallel, will be over-riden inside function
                     makePlotAll=makePlotAll,
                     parallelHandle=True,  # requires large amounts of RAM
-                    postProcessAllFibers=True
+                    postProcessAllFibers=True,
+                    exclusiveFibers=None #list of fibers which will be postprocessed. useful for debugging
                 )
 
             savePostProcessingData = True
             if savePostProcessingData:
 
-                print("\n\tpostProcessingOfFibers():\n\tWriting tiff file to : \n " +
-                    commonPath+permutationPaths[permutationIndex]+'V_fiberMap_postProcessed.tiff')
+                print("\n\tpostProcessingOfFibers():\n\tWriting tiff file to : \n{}".format(
+                    os.path.join(commonPath,permutationPaths[permutationIndex],'V_fiberMap_postProcessed.tiff')))
 
                 tifffile.imwrite(
-                    commonPath +
-                    permutationPaths[permutationIndex] +
-                    'V_fiberMap_postProcessed.tiff',
+                    os.path.join(
+                        commonPath,
+                        permutationPaths[permutationIndex],
+                        'V_fiberMap_postProcessed.tiff'
+                    ),
                     V_fiberMap,
                     resolution=(xRes, xRes, unitTiff),
                     description=descriptionStr,
@@ -441,28 +451,40 @@ for commonPath in directories:
                 )
 
                 if V_fiberMap_randomized is not None:
-                    print("\n\tpostProcessingOfFibers():\n\tWriting tiff file to : \n " +
-                        commonPath+permutationPaths[permutationIndex]+'V_fiberMap_randomized.tiff')
+                    print("\n\tpostProcessingOfFibers():\n\tWriting tiff file to : \n{}".format(
+                        os.path.join(commonPath,permutationPaths[permutationIndex]+'V_fiberMap_randomized.tiff')))
 
-                    tifffile.imwrite(commonPath+permutationPaths[permutationIndex]+'V_fiberMap_randomized.tiff',
-                                    V_fiberMap_randomized,
-                                    resolution=(xRes, xRes, unitTiff),
-                                    description=descriptionStr,
-                                    compress=True
-                                    )
+                    tifffile.imwrite(
+                        os.path.join(
+                            commonPath,
+                            permutationPaths[permutationIndex],
+                            'V_fiberMap_randomized.tiff'
+                        ),
+                        V_fiberMap_randomized,
+                        resolution=(xRes, xRes, unitTiff),
+                        description=descriptionStr,
+                        compress=True
+                    )
 
                 if permutationVec == "123":
-                    print("\n\tpostProcessingOfFibers():\n\tWriting tiff file to : \n " +
-                        commonPath+permutationPaths[permutationIndex]+'V_fibers_masked.tiff')
+                    print("\n\tpostProcessingOfFibers():\n\tWriting tiff file to : \n{}".format(
+                        os.path.join(commonPath,permutationPaths[permutationIndex],'V_fibers_masked.tiff')))
 
-                    tifffile.imwrite(commonPath+permutationPaths[permutationIndex]+'V_fibers_masked.tiff',
-                                    V_fibers_masked,
-                                    resolution=(xRes, xRes, unitTiff),
-                                    description=descriptionStr,
-                                    compress=True
-                                    )
+                    tifffile.imwrite(
+                        os.path.join(
+                            commonPath,
+                            permutationPaths[permutationIndex],
+                            'V_fibers_masked.tiff'
+                        ),
+                        V_fibers_masked,
+                        resolution=(xRes, xRes, unitTiff),
+                        description=descriptionStr,
+                        compress=True
+                    )
 
-                with open(commonPath+permutationPaths[permutationIndex]+'postProcStats.json', "w") as f:
+                times_postProc["hostname"]=hostnameStr
+
+                with open(os.path.join(commonPath,permutationPaths[permutationIndex],'postProcStats.json'), "w") as f:
                     json.dump(times_postProc, f, sort_keys=False, indent=4)
 
             if makePlotAll:
@@ -486,12 +508,12 @@ for commonPath in directories:
     doOutputVTK = checkIfFilesPresent(
         commonPath,
         "PropertyMaps.vtk",
-        "V_fiberMapCombined_randomized.tiff",
-        "V_fiberMapCombined_randomizedFloat.tiff"
+        # "V_fiberMapCombined_randomized.tiff",
+        # "V_fiberMapCombined_randomizedFloat.tiff"
     )
 
     makeVTKfiles=True
-    randomizeFiberMap=True
+    randomizeFiberMap=False
 
     if doOutputVTK:
         outputPropertyMap(

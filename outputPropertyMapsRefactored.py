@@ -1,12 +1,10 @@
 # by Facundo Sosa-Rey, 2021. MIT license
 
 import os
-import subprocess
 import numpy as np
 import time
 import pickle
 
-from joblib import Parallel, delayed  
 import multiprocessing
 
 import tifffile
@@ -20,7 +18,16 @@ from vtk import vtkStructuredPoints,vtkStructuredPointsWriter,VTK_FLOAT
 from vtk.util import numpy_support
 
 
-def outputPropertyMap(commonPath,parallelHandle=True,randomizeFiberMap=False,croppedFiles=False,makeVTKfiles=True):
+def outputPropertyMap(
+    commonPath,
+    parallelHandle=True,
+    randomizeFiberMap=False,
+    croppedFiles=False,
+    makeVTKfiles=True,
+    forceReprocessing=False,
+    doDownSampling=True,
+    downSamplingFactor=2, # to reduce PropertyMaps.vtk file size
+    ):
 
     print("\noutputPropertyMap() called on dataset:\n{}".format(commonPath))
 
@@ -32,20 +39,27 @@ def outputPropertyMap(commonPath,parallelHandle=True,randomizeFiberMap=False,cro
         fiberStructPath=commonPath
 
 
-    with TiffFile(commonPath+postProcessedFileName) as tif:
-        print("\tloading: \n"+commonPath+"V_fiberMapCombined_postProcessed.tiff")
+    with TiffFile(os.path.join(commonPath,postProcessedFileName)) as tif:
+        print("\tloading: \n{}".format(os.path.join(commonPath,"/V_fiberMapCombined_postProcessed.tiff")))
         xRes,unitTiff,descriptionStr=getTiffProperties(tif,getDescription=True)
-
         if unitTiff=="INCH":
             pixelSize_micron=xRes[1]/xRes[0]*0.0254*1e6
         elif  unitTiff=="CENTIMETER":
             pixelSize_micron=xRes[1]/xRes[0]*0.01*1e6
         else:
             raise ValueError("other units values not implemented in getTiffProperties")
-
         V_fiberMap=tif.asarray()
 
-    with open(fiberStructPath+"fiberStruct_final.pickle", "rb") as f:
+    if doDownSampling:
+        _z=np.array([val*downSamplingFactor for val in range(int(V_fiberMap.shape[0]/downSamplingFactor))])
+        _x=np.array([val*downSamplingFactor for val in range(int(V_fiberMap.shape[1]/downSamplingFactor))])
+        _y=np.array([val*downSamplingFactor for val in range(int(V_fiberMap.shape[2]/downSamplingFactor))])
+
+        _zz,_xx,_yy=np.meshgrid(_z,_x,_y,indexing='ij')
+
+        V_fiberMap=V_fiberMap[_zz,_xx,_yy]
+
+    with open(os.path.join(fiberStructPath,"fiberStruct_final.pickle"), "rb") as f:
         fiberStruct_all  = pickle.load(f)
         fiberStruct=fiberStruct_all["fiberStruct"]
         exclusiveZone=fiberStruct_all["exclusiveZone"]
@@ -57,13 +71,19 @@ def outputPropertyMap(commonPath,parallelHandle=True,randomizeFiberMap=False,cro
 
     ### make vtk with multi-field data
 
+    if forceReprocessing:
+        if "processedFibers" in fiberStruct_all.keys():
+            del fiberStruct_all["processedFibers"]
 
     if "processedFibers"in fiberStruct_all.keys():
         print("\tload processed fibers from a previous run")
 
         processedFibers=fiberStruct_all["processedFibers"]
     else:
-        print("\tfirst run, re-process all fibers, some of them need their orientationVec updated after combinations")
+        if forceReprocessing:
+            print("forceReprocessing set to True, running fiber processing again")
+        else:        
+            print("\tfirst run, re-process all fibers, some of them need their orientationVec updated after combinations")
 
         processedFibers={}
         for fiberID,fib in fiberStruct.items():
@@ -88,7 +108,7 @@ def outputPropertyMap(commonPath,parallelHandle=True,randomizeFiberMap=False,cro
         "exclusiveZone"             :exclusiveZone
     }
 
-    with open(commonPath+"fiberStruct_final.pickle","wb") as f:
+    with open(os.path.join(commonPath,"fiberStruct_final.pickle"),"wb") as f:
         pickle.dump(fiberStructPickle,f,protocol=pickle.HIGHEST_PROTOCOL)
 
     if makeVTKfiles:
@@ -151,7 +171,8 @@ def outputPropertyMap(commonPath,parallelHandle=True,randomizeFiberMap=False,cro
         structPoints.GetPointData().AddArray(fiberIDs_VTK)
 
 
-        filename = commonPath+"PropertyMaps.vtk"
+        filename = os.path.join(commonPath,"PropertyMaps.vtk")
+
         writer = vtkStructuredPointsWriter()
         writer.SetFileName(filename)
         writer.SetInputData(structPoints)
@@ -161,6 +182,7 @@ def outputPropertyMap(commonPath,parallelHandle=True,randomizeFiberMap=False,cro
 
 
     if randomizeFiberMap:
+
         print("\n\trandom shuffling of markers for rendering purposes started")
         
         listMarkers=np.unique(V_fiberMap)
@@ -185,16 +207,26 @@ def outputPropertyMap(commonPath,parallelHandle=True,randomizeFiberMap=False,cro
 
         V_fiberMap_randomizedFloat[V_fiberMap_randomized==-1]=np.nan
 
+        if doDownSampling:
+            filename='V_fiberMapCombined_randomized_downSampled.tiff'
+        else:
+            filename='V_fiberMapCombined_randomized.tiff'
+
         tifffile.imwrite(
-            commonPath+'V_fiberMapCombined_randomized.tiff',
+            os.path.join(commonPath,filename),
             V_fiberMap_randomized,
             resolution=(xRes,xRes,unitTiff),
             description=descriptionStr,
             compress=True
         )
 
+        if doDownSampling:
+            filename='V_fiberMapCombined_randomizedFloat_downSampled.tiff'
+        else:
+            filename='V_fiberMapCombined_randomizedFloat.tiff'
+
         tifffile.imwrite(
-            commonPath+'V_fiberMapCombined_randomizedFloat.tiff',
+            os.path.join(commonPath,filename),
             V_fiberMap_randomizedFloat,
             resolution=(xRes,xRes,unitTiff),
             description=descriptionStr,
@@ -202,4 +234,5 @@ def outputPropertyMap(commonPath,parallelHandle=True,randomizeFiberMap=False,cro
         )
 
     print("\toutputPropertyMap done\n\n")
+
 

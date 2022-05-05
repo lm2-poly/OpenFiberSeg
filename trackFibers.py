@@ -9,24 +9,15 @@ from extractCenterPoints import getTiffProperties
 from fibers import fiberObj
 from matplotlib import pyplot as plt
 
-import subprocess
 import os
 import time
-import traceback
 
 from joblib import Parallel, delayed  
 import multiprocessing
 
-
-from skimage import io
-#on conda
-# from skimage.external.tifffiltopCentersrt TiffFile
-#on system-level python
 from tifffile import TiffFile
 
 from trackingParameters import getTrackingParams
-# from trackingParameters import trackingAndPlottingParams as params
-
 
 def plotCandidates(fibObjDown,fibObjUp):
     fig = plt.figure()
@@ -55,11 +46,11 @@ num_cores =multiprocessing.cpu_count()-2
 
 def tracking(commonPath,permutationPath,permutationVec,exclusiveZone=None,parallelHandle=False,verboseHandle=False):
 
-    print("\n\n\ttracking() called on dataset: \n{}".format(commonPath+permutationPath))
+    print("\n\n\ttracking() called on dataset: \n{}".format(os.path.join(commonPath,permutationPath)))
     print("\t\treading from disk")
     tic = time.perf_counter()
 
-    filesInDir = [f.path for f in os.scandir(commonPath+permutationPath) if f.is_file()]
+    filesInDir = [f.path for f in os.scandir(os.path.join(commonPath,permutationPath)) if f.is_file()]
     watershedFound=False
     for i,iPath in enumerate(filesInDir):
         if "V_fibers.tiff" in iPath:
@@ -73,8 +64,8 @@ def tracking(commonPath,permutationPath,permutationVec,exclusiveZone=None,parall
             indexWaterJson=i
 
     if not watershedFound:
-        raise FileExistsError("\nwatershedCenterPoints.json not found in\n"+commonPath+permutationPath+\
-            " \n\tCentroid extraction needs to be done first")
+        raise FileExistsError("\nwatershedCenterPoints.json not found in\n{}\n\tCentroid extraction needs to be done first".format(
+            os.path.join(commonPath,permutationPath)))
 
 
     filesCommonPath = [f.path for f in os.scandir(commonPath) if f.is_file()]
@@ -108,8 +99,6 @@ def tracking(commonPath,permutationPath,permutationVec,exclusiveZone=None,parall
         xRes,unitTiff=getTiffProperties(tif) 
         V_fibers      =tif.asarray()
 
-    if np.max(V_fibers)!=255:
-        raise ValueError("V_fibers \"True\" value must be 255 for the checks to work in the fiberObj methods")
 
     toc = time.perf_counter()
     times_tracking={"parallelHandle:":parallelHandle}
@@ -212,6 +201,12 @@ def tracking(commonPath,permutationPath,permutationVec,exclusiveZone=None,parall
             centerPoints[iSlice]=[ np.array( centroid.getPnt(),float) for centroid in watershedData[iSlice]  ] 
 
         offset=0
+
+    if np.max(V_fibers)!=255:
+        print("V_fibers does not contain \"True\" value (255), tracking skipped")
+        fiberObj.initTrackedCenterPoints(len(watershedData),offset)
+        return {},V_fibers.shape,times_tracking,V_fibers,xRes,unitTiff 
+
 
     LUT_id_bottom   =[[] for i in range(len(centerPoints)-1)]
     LUT_id_top      =[[] for i in range(len(centerPoints)-1)]
@@ -413,8 +408,8 @@ def saveFiberStruct(commonPath,permutationPath,fiberStructSave,fiberStats):
 
     #################################################################################
 
-    filenameJSONexport  =commonPath+permutationPath+"fiberStats.json"
-    filenamePickleExport=commonPath+permutationPath+"fiberStruct.pickle"    
+    filenameJSONexport  =os.path.join(commonPath,permutationPath,"fiberStats.json")
+    filenamePickleExport=os.path.join(commonPath,permutationPath,"fiberStruct.pickle")
 
 
     print("\n\ttracking():\n\tWriting output to : \n "+filenameJSONexport)

@@ -33,14 +33,15 @@ color3=tuple([float(val)/255. for val in [ 255,179, 25] ])
 
 colorCollisions=tuple([float(val)/255. for val in [ 207, 27,25] ])
 
-def paddingOfVolume(V,radiusZ,radiusX,radiusY,paddingValue=255):
+def paddingOfVolume(V,radiusZ,radiusX,radiusY,keepTopAndBottom=True,paddingValue=0):
 
-    paddedV_perim = np.zeros((V.shape[0]+2*radiusZ,V.shape[1]+2*radiusX,V.shape[2]+2*radiusY),np.uint8)
+    paddedV_perim = np.ones((V.shape[0]+2*radiusZ,V.shape[1]+2*radiusX,V.shape[2]+2*radiusY),V.dtype)*paddingValue
     
-    #fibers connected to top or bottom of volume must be connected with True value, else would be trimmed
-    for i in range(radiusZ):
-        paddedV_perim[i,   radiusX:-radiusX,radiusY:-radiusY] = V[ 0,:,:].copy()
-        paddedV_perim[-i-1,radiusX:-radiusX,radiusY:-radiusY] = V[-1,:,:].copy()
+    if keepTopAndBottom:
+        #fibers connected to top or bottom of volume must be connected with True value, else would be trimmed
+        for i in range(radiusZ):
+            paddedV_perim[i,   radiusX:-radiusX,radiusY:-radiusY] = V[ 0,:,:].copy()
+            paddedV_perim[-i-1,radiusX:-radiusX,radiusY:-radiusY] = V[-1,:,:].copy()
 
     #interior region
                                                #included:-(excluded)   
@@ -564,6 +565,7 @@ def collisionDetectionWrapper(
                             continue
                         fiberID=combineLUT[fiberID]
                     
+
                     # if the other fiber already has been combined to another, combine to that other one
                     if fiberID_other in combineLUT.keys():
 
@@ -762,26 +764,26 @@ def postProcessingOfFibers(
 
     tic = time.perf_counter()
 
-    with TiffFile(commonPath+permutationPath+"V_fiberMap.tiff") as tif:
-        print("\tloading: \n"+commonPath+permutationPath+"V_fiberMap.tiff")
+    with TiffFile(os.path.join(commonPath,permutationPath,"V_fiberMap.tiff")) as tif:
+        print("\tloading: \n{}".format(os.path.join(commonPath,permutationPath,"V_fiberMap.tiff")))
         xRes,unitTiff,descriptionStr=getTiffProperties(tif,getDescription=True)
 
         V_fiberMap=tif.asarray()
 
-    with TiffFile(commonPath+permutationPath+"V_pores.tiff") as tif:
-        print("\tloading: \n"+commonPath+permutationPath+"V_pores.tiff")
+    with TiffFile(os.path.join(commonPath,permutationPath,"V_pores.tiff")) as tif:
+        print("\tloading: \n{}".format(os.path.join(commonPath,permutationPath,"V_pores.tiff")))
         V_pores=tif.asarray()   
 
     try:
-        with TiffFile(commonPath+permutationPath+"V_perim.tiff") as tif:
-            print("\tloading: \n"+commonPath+permutationPath+"V_perim.tiff")
+        with TiffFile(os.path.join(commonPath,permutationPath,"V_perim.tiff")) as tif:
+            print("\tloading: \n{}".format(os.path.join(commonPath,permutationPath,"V_perim.tiff")))
             V_perim=tif.asarray()   
     except:
         V_perim=None
 
     if makePlotsIndividual or makePlotAll:
-        with TiffFile(commonPath+permutationPath+"V_hist.tiff") as tif:
-            print("\tloading: \n"+commonPath+permutationPath+"V_hist.tiff")
+        with TiffFile(os.path.join(commonPath,permutationPath,"V_hist.tiff")) as tif:
+            print("\tloading: \n{}".format(os.path.join(commonPath,permutationPath,"V_hist.tiff")))
             V_hist=tif.asarray()
 
     else:
@@ -795,7 +797,7 @@ def postProcessingOfFibers(
 
     if permutationPath!="Permutation123/":
 
-        filesInDir123 = [f.path for f in os.scandir(commonPath+"Permutation123/") if f.is_file()]
+        filesInDir123 = [f.path for f in os.scandir(os.path.join(commonPath,"Permutation123/")) if f.is_file()]
         indexFibers_mask=None
         for i,iPath in enumerate(filesInDir123):
             if "V_fibers_masked.tiff" in iPath:
@@ -803,7 +805,7 @@ def postProcessingOfFibers(
 
         if indexFibers_mask is None:
             raise RuntimeError("Can't find V_fibers_masked.tiff in \n{}".\
-                format(commonPath+"Permutation123/"))
+                format(os.path.join(commonPath,"Permutation123/")))
 
         with TiffFile(filesInDir123[indexFibers_mask]) as tif:
             print("\tloading: \n"+filesInDir123[indexFibers_mask])
@@ -817,7 +819,7 @@ def postProcessingOfFibers(
         if V_fiberMap.shape!=V_fibers_masked.shape:
             raise ValueError("V_fiberMap.tiff and V_fibers_masked.tiff are of incompatible shapes")
 
-    with open(commonPath+permutationPath+"fiberStruct.pickle" , "rb") as f:
+    with open(os.path.join(commonPath,permutationPath,"fiberStruct.pickle") , "rb") as f:
         fiberStruct  = pickle.load(f)
 
     exclusiveZone=fiberStruct["exclusiveZone"]
