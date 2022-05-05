@@ -493,7 +493,7 @@ def combinePermutations(
 
         import cameraConfig
         from mayavi import mlab
-        from visualisationTool      import addLegend
+        from visualisationTool      import makeLegend
 
 
         rangeOutline=[0.,V_hist.shape[1],0.,V_hist.shape[2],0.,V_hist.shape[0] ]
