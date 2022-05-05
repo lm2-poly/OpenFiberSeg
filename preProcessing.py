@@ -40,7 +40,7 @@ savePreprocessingData=True
 
 #multithreading parameters
 if parallelHandle:
-    num_cores =multiprocessing.cpu_count()-2
+    num_cores =min(multiprocessing.cpu_count()-2,20)
 else:
     num_cores=1
 
