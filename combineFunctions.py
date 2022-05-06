@@ -170,7 +170,7 @@ def compactify(commonPath,permutationPaths,parallelHandle=False):
     new values such that the fiberIDs in V_fiberMapCompactified are 0,1,2,...,nFibersTotal , with no missing numbers """
 
     if parallelHandle:
-        num_cores=multiprocessing.cpu_count()-1
+        num_cores=min(multiprocessing.cpu_count()-1,48) #error is thrown if too many cores used
     else:
         num_cores=1
 
