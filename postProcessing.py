@@ -720,7 +720,7 @@ def makePropertyMap(V_fiberMap,marker_to_propertyLUT,parallelHandle=True):
     V_fiberMap_property=np.empty(V_fiberMap.shape,np.float32)
     
     if parallelHandle:
-        num_cores=multiprocessing.cpu_count()-1 #will cause memory overload for large sets if too many cores used 
+        num_cores=min(multiprocessing.cpu_count()-1,48) # error thrown if too many cores used 
     else:
         num_cores=1
 
