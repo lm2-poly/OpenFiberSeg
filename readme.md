@@ -76,7 +76,9 @@ Create a new case in InsegtFiber_3D.m to point to your data directory, along wit
 
 In the main.py file, change the dataPath variable to the directory containing "processed" files from Insegt. Launch this script to execute OpenFiberSeg with default parameters. On first run, main.py will create a trackingParams.json file, containing the default parameters. Editing parameters in this json file enables the use of different parameters for this particular dataset, without changing the default parameters.
 
-Once OpenFiberSeg completes, fiber statistics and figures such as those published in the original paper can be created from the script fiberStatistics.py. Change the "path" variable in this script to the directory containing your data (specifically, the directory containing the "fiberStruct_final.pickle" file produced by OpenFiberSeg)
+Once OpenFiberSeg completes, fiber statistics and figures such as those published in the original paper can be created from the script fiberStatistics.py. Change the "path" variable in this script to the directory containing your data (specifically, the directory containing the "fiberStruct_final.pickle" file produced by OpenFiberSeg). The following graphs is created using the PEEK40 dataset provided along with this repo.
+
+![Fiber and deviation distribution, PEEK 40 wt.\%](2dHist_singleVariableHistogram_PEEK40_wide.png)
 
 
 
