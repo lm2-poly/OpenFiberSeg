@@ -78,7 +78,6 @@ In the main.py file, change the dataPath variable to the directory containing "p
 
 Once OpenFiberSeg completes, fiber statistics and figures such as those published in the original paper can be created from the script fiberStatistics.py. Change the "path" variable in this script to the directory containing your data (specifically, the directory containing the "fiberStruct_final.pickle" file produced by OpenFiberSeg). The following graphs is created using the PEEK40 dataset provided along with this repo.
 
-![Fiber and deviation distribution, PEEK 40 wt.\%](2dHist_singleVariableHistogram_PEEK40_wide.png)
 
-<img src="2dHist_singleVariableHistogram_PEEK40_wide.png" width="200">
+<img src="2dHist_singleVariableHistogram_PEEK40_wide.png" width="600">
 
