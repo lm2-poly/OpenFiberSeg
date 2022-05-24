@@ -62,8 +62,21 @@ $ python3 fiberStatistics.py
 Place the tiff files of your scans in their own path in:
 ./TomographicData/\<Scan Name\>/uCT_RawData
 
-To find the preprocessing parameters, run the GUI application and follow instructions in:
+To find the pre-processing parameters, run the GUI application and follow instructions in:
 
 $ python3 preProcessing_GUI.py
 
-Beware the GUI is still in beta. 
+Beware the GUI is still in beta, not all features are functional. 
+
+Parameters can also be controlled manually by creating a new case in the preProcessing.py script.
+
+To create a new dictionary to work with Insegt, use the script called InsegtFiber_3D_createDictionary.m in Matlab. We refer you to the documentation on Insegt from the creators of this tool, at http://qim.compute.dtu.dk/tools/#interactive-segmentation-tool-insegt 
+
+Create a new case in InsegtFiber_3D.m to point to your data directory, along with pixel ranges and path to dictionary. 
+
+In the main.py file, change the dataPath variable to the directory containing "processed" files from Insegt. Launch this script to execute OpenFiberSeg with default parameters. On first run, main.py will create a trackingParams.json file, containing the default parameters. Editing parameters in this json file enables the use of different parameters for this particular dataset, without changing the default parameters.
+
+Once OpenFiberSeg completes, fiber statistics and figures such as those published in the original paper can be created from the script fiberStatistics.py. Change the "path" variable in this script to the directory containing your data (specifically, the directory containing the "fiberStruct_final.pickle" file produced by OpenFiberSeg)
+
+
+
