@@ -1,6 +1,7 @@
 # OpenFiberSeg
 Automated segmentation tool for the extraction of individual fibers in short fiber reinforced composites
 
+![Graphical abstract](graphicalAbstract.png)
 
 ## Install python packages
 
