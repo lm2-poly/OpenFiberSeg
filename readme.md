@@ -80,5 +80,5 @@ Once OpenFiberSeg completes, fiber statistics and figures such as those publishe
 
 ![Fiber and deviation distribution, PEEK 40 wt.\%](2dHist_singleVariableHistogram_PEEK40_wide.png)
 
-
+<img src="2dHist_singleVariableHistogram_PEEK40_wide.png" width="200">
 
