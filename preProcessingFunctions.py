@@ -146,7 +146,9 @@ def histEqu_CannyDetection(filePath,
     plotCannyEdgeDetection=False,
     plotThresholding=False,
     withGUI=False,
-    figsize=[16,16]):
+    figsize=[12,12],
+    fontsize=18
+    ):
 
     print("\t\thistEqu_CannyDetection(): imSlice={: >4.0f},  in range ({: >4.0f}/{: >4.0f})".format(imSlice,iFirst,iLast) )
 
@@ -168,7 +170,12 @@ def histEqu_CannyDetection(filePath,
 
     if findExternalPerimeter:
 
-        retval, imgThresh	=	cv.threshold(im	, thresholding_valPerim , 255,cv.THRESH_BINARY)
+        if thresholding_valPerim is None:
+            retval, imgThresh	=	cv.threshold(im	, 50. , 255,cv.THRESH_BINARY+cv.THRESH_OTSU)
+        else:
+            #override with manual threshold (not Otsu's method)
+            retval, imgThresh	=	cv.threshold(im	, thresholding_valPerim , 255,cv.THRESH_BINARY)
+
 
         # padding is required so Canny edges do not reach image boundary when dilated,
         # and prevent floodfill to be complete
@@ -178,10 +185,11 @@ def histEqu_CannyDetection(filePath,
         if plotThresholding:
             if withGUI:
                 fig_tresholding = plt.figure(figsize=figsize)
-                plt.title("Thresholding on original data, imslice={: >4.0f}".format(imSlice), fontsize=10)
+                plt.title("Thresholding on original data, imslice={: >4.0f}".format(imSlice), fontsize=fontsize)
             else:
                 plt.figure(figsize=figsize)
-                plt.title("Thresholding on original data, imslice={: >4.0f},  in range ({: >4.0f}/{: >4.0f})".format(imSlice,iFirst,iLast), fontsize=28)
+                plt.title("Thresholding on original data, imslice={: >4.0f},  in range ({: >4.0f}/{: >4.0f})".format(imSlice,iFirst,iLast), fontsize=fontsize)
+
 
             plt.imshow(imgThresh,cmap="binary")
             plt.tight_layout()
@@ -189,15 +197,27 @@ def histEqu_CannyDetection(filePath,
 
             if withGUI:
                 fig_originalData= plt.figure(figsize=figsize)
-                plt.title("Original data, imslice={: >4.0f}".format(imSlice), fontsize=10)
+                plt.title("Original data, imslice={: >4.0f}".format(imSlice), fontsize=fontsize)
             else:
                 plt.figure(figsize=figsize)
-                plt.title("Original data, imslice={: >4.0f},  in range ({: >4.0f}/{: >4.0f})".format(imSlice,iFirst,iLast), fontsize=28)
+                plt.title("Original data, imslice={: >4.0f},  in range ({: >4.0f}/{: >4.0f})".format(imSlice,iFirst,iLast), fontsize=fontsize)
             
             plt.imshow(im,cmap="binary_r")
             plt.tight_layout()
 
             if not withGUI:
+                plt.figure(figsize=figsize)
+
+                plt.title("Histogram original data, imslice={: >4.0f}".format(imSlice), fontsize=fontsize)
+
+                HistOtsu=plt.hist(im.ravel(),bins=100)
+
+                plt.plot([retval]*2,[0,np.max(HistOtsu[0])],":",label="Threshold")
+                
+                plt.legend()
+                
+                print("OTSU threshold: {}".format(retval))
+                
                 plt.show()
 
 

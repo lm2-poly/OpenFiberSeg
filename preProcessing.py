@@ -1,5 +1,6 @@
 # by Facundo Sosa-Rey, 2021. MIT license
 
+import re
 import numpy as np
 import os
 from datetime import date
@@ -26,13 +27,13 @@ findPores=True
 
 ##########################################
 
-plotThresholding                =False
-plotCanny_perimeterDetection    =False
-plotOpening_perimeterDetection  =False #volumetric processing
+plotThresholding                =True
+plotCanny_perimeterDetection    =True
+plotOpening_perimeterDetection  =True #volumetric processing
 
-plotCannyEdgeDetection          =False
-plotFloodFilling                =False
-plotOpening_Closing_pores       =False #volumetric processing
+plotCannyEdgeDetection          =True
+plotFloodFilling                =True
+plotOpening_Closing_pores       =True #volumetric processing
 
 parallelHandle=True
 
@@ -48,18 +49,16 @@ dilatePerimOverPores=True #leave at True for the majority of cases: prevents the
     # and thus the entire volume be labelled as "pore". For some rare cases, can be better to deactivate it, to capture the pores in contact with 
     # the boundary (especially when the scanning cylinder is entirely contained in the solid. )
 
-scanName='Loic_PEEK_05/'
+# scanName='Loic_PEEK_05/'
 # scanName='Loic_PEEK_10/'
-scanName='Loic_PEEK_15/'
+# scanName='Loic_PEEK_15/'
 # scanName='Loic_PEEK_20/'
 # scanName='Loic_PEEK_25/'
 # scanName='Loic_PEEK_30/'
 # scanName='Loic_PEEK_35/'
-# scanName='Loic_PEEK_40/'
-
+scanName='Loic_PEEK_40/'
 
 formatStr="{:0>4.0f}.tiff" #default, do not touch (change below if necessary, for each scan)
-
       
 if scanName=="Loic_PEEK_05/":
     
@@ -291,7 +290,7 @@ if scanName=="Loic_PEEK_40/":
     pixelRangeX=[60, 960]
     pixelRangeY=[60, 930]
     iFirst=1   # first slice
-    iLast= 10#980 #  last slice
+    iLast= 980 #  last slice
     
     # thresholds for the Canny algorithm
     Canny_valLow_perimeter =30
@@ -316,11 +315,61 @@ if scanName=="Loic_PEEK_40/":
     SE_pores3d_radiusOpening=1
     SE_pores3d_radiusClosing=3  
 
-######################################################
+#####################################################################################
+
+if (iLast-iFirst)>40:
+    if any([
+        plotThresholding,
+        plotCanny_perimeterDetection,
+        plotOpening_perimeterDetection,
+        plotCannyEdgeDetection,
+        plotFloodFilling,
+        plotOpening_Closing_pores
+        ]):
+        raise ValueError("These parameters will cause the production of too many figures. Set plotting to False to continue.")
+
 
 ######################################################
 
-pathRawData="uCT_RawData/"
+pathRawData="uCT_RawData"
+
+while pathRawData in commonPath:
+    # commonPath should not point to uCT_RawData but to the parent folder
+    commonPath=os.path.dirname(commonPath)
+
+currentPath=os.path.join(commonPath,pathRawData)
+
+if not os.path.exists(currentPath):
+    raise IOError("The path provided does not exist: {}".format(currentPath))
+
+######################################################
+
+# get filelist and pixel size
+
+tiffFilesInDir=[f.name for f in os.scandir(currentPath) if f.is_file() and "Header.txt" not in f.name]
+
+matchObj=re.match(r"(.*)([0-9]{4}).tiff",tiffFilesInDir[0])
+
+prefix=matchObj.group(1)
+
+filenameList    ={}
+
+for tF in tiffFilesInDir:
+    matchObj=re.match(r"(.*)([0-9]{4}).tiff",tF)
+
+    if matchObj is not None:
+        filenameList[int(matchObj.group(2))]=tF
+
+
+with TiffFile(os.path.join(currentPath,filenameList[iFirst])) as tif:
+    xRes,unitTiff=getTiffProperties(tif)
+
+    if pixelRangeX is None or pixelRangeY is None:
+        firstImage=tif.asarray()
+
+        pixelRangeX=[1,firstImage.shape[0]]
+        pixelRangeY=[1,firstImage.shape[1]]
+        
 
 print("PreProcessing on files in:\n"+commonPath+pathRawData)
 
@@ -368,12 +417,10 @@ V_hist  = np.zeros((numPixX,numPixY,nData),np.uint8)
 
 filename    ={}
 
-filename={imSlice:formatStr.format(imSlice) for imSlice in range(iFirst,iLast+1) }
-
+filename={imSlice:prefix+formatStr.format(imSlice) for imSlice in range(iFirst,iLast+1) }
 
 with TiffFile(os.path.join(commonPath,pathRawData,filename[iFirst])) as tif:
     xRes,unitTiff=getTiffProperties(tif)
-
 
 # structuring elements for the different morphological operations
 
