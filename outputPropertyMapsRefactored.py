@@ -1,5 +1,6 @@
 # by Facundo Sosa-Rey, 2021. MIT license
 
+import json
 import os
 import numpy as np
 import time
@@ -51,6 +52,9 @@ def outputPropertyMap(
         V_fiberMap=tif.asarray()
 
     if doDownSampling:
+
+        pixelSize_micronDownSampled=pixelSize_micron*downSamplingFactor # to have a correct scaleBar
+
         _z=np.array([val*downSamplingFactor for val in range(int(V_fiberMap.shape[0]/downSamplingFactor))])
         _x=np.array([val*downSamplingFactor for val in range(int(V_fiberMap.shape[1]/downSamplingFactor))])
         _y=np.array([val*downSamplingFactor for val in range(int(V_fiberMap.shape[2]/downSamplingFactor))])
@@ -58,6 +62,9 @@ def outputPropertyMap(
         _zz,_xx,_yy=np.meshgrid(_z,_x,_y,indexing='ij')
 
         V_fiberMap=V_fiberMap[_zz,_xx,_yy]
+    else:
+        pixelSize_micronDownSampled=pixelSize_micron
+
 
     with open(os.path.join(fiberStructPath,"fiberStruct_final.pickle"), "rb") as f:
         fiberStruct_all  = pickle.load(f)
@@ -150,12 +157,12 @@ def outputPropertyMap(
             V_fiberMap.shape[0]
             )
         structPoints.SetOrigin(0, 0, 0)
-        if unitTiff=="INCH":
-            structPoints.SetSpacing(xRes[1]/xRes[0]*25.4, xRes[1]/xRes[0]*25.4, xRes[1]/xRes[0]*25.4)
-        else:
-            #TODO, untested for "CENTIMETER"
-            structPoints.SetSpacing(xRes[1]/xRes[0]*10, xRes[1]/xRes[0]*10, xRes[1]/xRes[0]*10)
 
+        structPoints.SetSpacing(
+            pixelSize_micronDownSampled/1000,
+            pixelSize_micronDownSampled/1000,
+            pixelSize_micronDownSampled/1000
+            )
 
         fiberIDs_VTK = numpy_support.numpy_to_vtk(num_array=V_fiberMap.ravel(), array_type=VTK_FLOAT)
         fiberIDs_VTK.SetName('FiberID')
@@ -207,10 +214,15 @@ def outputPropertyMap(
 
         V_fiberMap_randomizedFloat[V_fiberMap_randomized==-1]=np.nan
 
+        filename='V_fiberMapCombined_randomized.tiff'
         if doDownSampling:
-            filename='V_fiberMapCombined_randomized_downSampled.tiff'
-        else:
-            filename='V_fiberMapCombined_randomized.tiff'
+            descriptionDict=json.loads(descriptionStr.replace("None","[]"))
+            descriptionDict["downSamplingFactor"]=downSamplingFactor
+
+            descriptionStr=json.dumps(descriptionDict)
+
+            xRes=(xRes[0],xRes[1]*downSamplingFactor) # so scaling is consistent with original size
+
 
         tifffile.imwrite(
             os.path.join(commonPath,filename),
@@ -220,10 +232,10 @@ def outputPropertyMap(
             compress=True
         )
 
-        if doDownSampling:
-            filename='V_fiberMapCombined_randomizedFloat_downSampled.tiff'
-        else:
-            filename='V_fiberMapCombined_randomizedFloat.tiff'
+        # if doDownSampling:
+            # filename='V_fiberMapCombined_randomizedFloat_downSampled.tiff'
+        # else:
+        filename='V_fiberMapCombined_randomizedFloat.tiff'
 
         tifffile.imwrite(
             os.path.join(commonPath,filename),

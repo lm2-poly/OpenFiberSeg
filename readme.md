@@ -1,5 +1,5 @@
 # OpenFiberSeg
-Automated segmentation tool for the extraction of individual fibers in short fiber reinforced composites
+Automated segmentation tool for the extraction of individual fibers in short fiber reinforced composites. This project is under active development, please check for changes periodically. 
 
 ![Graphical abstract](graphicalAbstract.png)
 
@@ -58,6 +58,8 @@ then run:
 $ python3 fiberStatistics.py
 
 # Working with your own tomographic data
+
+Basic usage tutorial is explained at: https://www.youtube.com/watch?v=wSJxrktZU4o
 
 Place the tiff files of your scans in their own path in:
 ./TomographicData/\<Scan Name\>/uCT_RawData

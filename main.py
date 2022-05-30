@@ -31,7 +31,7 @@ def getCommonPaths(rootPath):
     for dir in directories:
         
         #check for output directory of last step: fiber fraction adjustment
-        test=find(dir,"adjustingStats.json")
+        test=find(dir,"PropertyMaps.vtk")
 
         if len(test)==0:
             unProcessedDirectories.append(dir)
@@ -130,7 +130,7 @@ for commonPath in directories:
                     plotConvexityDefects        =False,
                     plotExpansion               =False, # won't plot if useProbabilityMap==False in trackingParams.json
                     plotOverlayFrom123          =False,
-                    # manualRange                     =range(10), #used in debugging, process only slice numbers in range
+                    # manualRange                 =range(100,105), #used in debugging, process only slice numbers in range
                     exclusiveZone               =exclusiveZone,
                     parallelHandle              =True
                 )
@@ -508,12 +508,12 @@ for commonPath in directories:
     doOutputVTK = checkIfFilesPresent(
         commonPath,
         "PropertyMaps.vtk",
-        # "V_fiberMapCombined_randomized.tiff",
-        # "V_fiberMapCombined_randomizedFloat.tiff"
+        "V_fiberMapCombined_randomized.tiff",
+        "V_fiberMapCombined_randomizedFloat.tiff"
     )
 
     makeVTKfiles=True
-    randomizeFiberMap=False
+    randomizeFiberMap=True
 
     if doOutputVTK:
         outputPropertyMap(
