@@ -27,13 +27,13 @@ findPores=True
 
 ##########################################
 
-plotThresholding                =True
-plotCanny_perimeterDetection    =True
-plotOpening_perimeterDetection  =True #volumetric processing
+plotThresholding                =False
+plotCanny_perimeterDetection    =False
+plotOpening_perimeterDetection  =False #volumetric processing
 
-plotCannyEdgeDetection          =True
-plotFloodFilling                =True
-plotOpening_Closing_pores       =True #volumetric processing
+plotCannyEdgeDetection          =False
+plotFloodFilling                =False
+plotOpening_Closing_pores       =False #volumetric processing
 
 parallelHandle=True
 
@@ -51,14 +51,12 @@ dilatePerimOverPores=True #leave at True for the majority of cases: prevents the
 
 # scanName='Loic_PEEK_05/'
 # scanName='Loic_PEEK_10/'
-# scanName='Loic_PEEK_15/'
+scanName='Loic_PEEK_15/'
 # scanName='Loic_PEEK_20/'
 # scanName='Loic_PEEK_25/'
 # scanName='Loic_PEEK_30/'
 # scanName='Loic_PEEK_35/'
-scanName='Loic_PEEK_40/'
-
-formatStr="{:0>4.0f}.tiff" #default, do not touch (change below if necessary, for each scan)
+# scanName='Loic_PEEK_40/'
       
 if scanName=="Loic_PEEK_05/":
     
@@ -414,12 +412,7 @@ if numPixX<1 or numPixY <1:
 V_original= np.zeros((numPixX,numPixY,nData),np.uint8)
 V_hist  = np.zeros((numPixX,numPixY,nData),np.uint8)
 
-
-filename    ={}
-
-filename={imSlice:prefix+formatStr.format(imSlice) for imSlice in range(iFirst,iLast+1) }
-
-with TiffFile(os.path.join(commonPath,pathRawData,filename[iFirst])) as tif:
+with TiffFile(os.path.join(commonPath,pathRawData,filenameList[iFirst])) as tif:
     xRes,unitTiff=getTiffProperties(tif)
 
 # structuring elements for the different morphological operations
@@ -469,7 +462,7 @@ print('\n\tHistogram equalization and Canny edge detection started')
 
 results = Parallel(n_jobs=num_cores)\
     (delayed(histEqu_CannyDetection)\
-        (os.path.join(commonPath,pathRawData,filename[imSlice]),
+        (os.path.join(commonPath,pathRawData,filenameList[imSlice]),
         imSlice,iFirst,iLast,pixelRangeX,pixelRangeY,
         findExternalPerimeter,
         findPores,

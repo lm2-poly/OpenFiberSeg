@@ -31,7 +31,7 @@ dataPath='./TomographicData/';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-scanName='PEEK05/';
+% scanName='PEEK05/';
 % scanName='PEEK10/';
 scanName='PEEK15/';
 % scanName='PEEK20/';
@@ -189,8 +189,7 @@ switch scanName
         zMin=1;
         zMax=978;
         thresh{1}='0.498'; %probability threshold value
-                
-    
+                 
 end
 
 path_volumeFolderHist= [dataPath scanName preprocessedFiles 'V_hist.tiff'];

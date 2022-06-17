@@ -24,7 +24,6 @@ close all
 % scanName='PEEK30/';
 % scanName='PEEK40/';
 
-
 scanName=char(scanName);
 
 switch scanName
@@ -78,7 +77,7 @@ switch scanName
         yMax=871;
         zMin=1;
         zMax=10; 
-        
+ 
 end
 
 preprocessedFiles='preProcessed/';
