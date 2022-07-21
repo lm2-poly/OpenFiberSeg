@@ -1,3 +1,5 @@
+// by Facundo Sosa-Rey, 2021. MIT license
+
 #include <iostream>
 #include <fstream>
 

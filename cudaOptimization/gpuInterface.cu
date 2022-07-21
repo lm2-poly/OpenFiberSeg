@@ -1,3 +1,5 @@
+// by Facundo Sosa-Rey, 2021. MIT license
+
 // see https://github.com/nosferalatu/SimpleGPUHashTable for hashtable implementation
 
 #include "stdio.h"
