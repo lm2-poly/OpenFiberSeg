@@ -29,7 +29,7 @@ path="./TomographicData/PEEK05/processed_x1-901_y1-871_z1-980/2020-01-01_12h00m0
 
 filename="fiberStruct_final.pickle"
 
-saveData=False
+saveData=True
 
 saveFigures=True
 

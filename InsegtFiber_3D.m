@@ -5,7 +5,7 @@
 
 %% Step 0: Add paths of Insegt GUI, other functions and scripts, and prepare workspace
 
-close all,
+close all
 clear
 addpath(genpath('./InsegtLibraries/texture_gui'))
 addpath('./InsegtLibraries/scripts')
@@ -27,20 +27,22 @@ fprintf('Step 0 completed\n')
 close all
 
 %indicate_dataFolder
-dataPath='./TomographicData/';
+commonPath='./TomographicData/';
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % scanName='PEEK05/';
 % scanName='PEEK10/';
-scanName='PEEK15/';
-% scanName='PEEK20/';
+% scanName='PEEK15/';
+scanName='PEEK20/';
 % scanName='PEEK25/';
 % scanName='PEEK30/';
 % scanName='PEEK35/';
 % scanName='PEEK40/';
 
 scanName=char(scanName);
+
+findPoresWithInsegt=false;
 
 if scanName(end)~='/'
     scanName=[scanName '/'];
@@ -53,7 +55,7 @@ switch scanName
         
         dictionaryFolder='InsegtDictionaryFiles/';
         dictionaryFile='dictionary_PEEK05.mat';
-        path_to_dict=          [dataPath dictionaryFolder dictionaryFile];
+        path_to_dict=          [commonPath dictionaryFolder dictionaryFile];
         
         FolderTag='processed';
         xMin=1;
@@ -62,7 +64,7 @@ switch scanName
         yMax=871;
         zMin=1;
         zMax=980;
-        thresh{1}='0.508';%probability threshold value
+        thresh=0.508;%probability threshold value
                 
     case 'PEEK10/'
         
@@ -70,7 +72,7 @@ switch scanName
         
         dictionaryFolder='InsegtDictionaryFiles/';
         dictionaryFile='dictionary_PEEK05.mat';
-        path_to_dict=          [dataPath dictionaryFolder dictionaryFile];
+        path_to_dict=          [commonPath dictionaryFolder dictionaryFile];
         
         FolderTag='processed';
         xMin=1;
@@ -79,7 +81,7 @@ switch scanName
         yMax=871;
         zMin=1;
         zMax=980;
-        thresh{1}='0.4995';%probability threshold value
+        thresh=0.4995;%probability threshold value
                 
     case 'PEEK15/'
 
@@ -87,7 +89,7 @@ switch scanName
   
         dictionaryFolder='InsegtDictionaryFiles/';
         dictionaryFile='dictionary_PEEK15.mat';
-        path_to_dict=          [dataPath dictionaryFolder dictionaryFile];
+        path_to_dict=          [commonPath dictionaryFolder dictionaryFile];
         
         FolderTag='processed';
         xMin=1;
@@ -96,7 +98,7 @@ switch scanName
         yMax=871;
         zMin=1;
         zMax=978;
-        thresh{1}='0.500'; %probability threshold value
+        thresh=0.500; %probability threshold value
                 
     case 'PEEK20/'
 
@@ -105,7 +107,7 @@ switch scanName
         dictionaryFolder='InsegtDictionaryFiles/';
         dictionaryFile='dictionary_PEEK20.mat';
 
-        path_to_dict=          [dataPath dictionaryFolder dictionaryFile];
+        path_to_dict=          [commonPath dictionaryFolder dictionaryFile];
         
         FolderTag='processed';
         xMin=1;
@@ -114,7 +116,7 @@ switch scanName
         yMax=871;
         zMin=1;
         zMax=978;
-        thresh{1}='0.497'; %probability threshold value
+        thresh=0.497; %probability threshold value
                 
     case 'PEEK25/'
 
@@ -123,7 +125,7 @@ switch scanName
         dictionaryFolder='InsegtDictionaryFiles/';
         dictionaryFile='dictionary_PEEK25.mat';
         
-        path_to_dict=          [dataPath dictionaryFolder dictionaryFile];
+        path_to_dict=          [commonPath dictionaryFolder dictionaryFile];
 
         
         FolderTag='processed';
@@ -133,7 +135,7 @@ switch scanName
         yMax=871;
         zMin=1;
         zMax=976;
-        thresh{1}='0.499'; %probability threshold value
+        thresh=0.499; %probability threshold value
                 
     case 'PEEK30/'
 
@@ -141,7 +143,7 @@ switch scanName
 
         dictionaryFolder='InsegtDictionaryFiles/';
         dictionaryFile='dictionary_PEEK30.mat';
-        path_to_dict=          [dataPath dictionaryFolder dictionaryFile];
+        path_to_dict=          [commonPath dictionaryFolder dictionaryFile];
 
         
         FolderTag='processed';
@@ -151,7 +153,7 @@ switch scanName
         yMax=871;
         zMin=1;
         zMax=978;
-        thresh{1}='0.499'; %probability threshold value
+        thresh=0.499; %probability threshold value
                 
     case 'PEEK35/'
 
@@ -159,7 +161,7 @@ switch scanName
 
         dictionaryFolder='InsegtDictionaryFiles/';
         dictionaryFile='dictionary_PEEK40.mat';%thresh{1}='0.502';
-        path_to_dict=          [dataPath dictionaryFolder dictionaryFile];
+        path_to_dict=          [commonPath dictionaryFolder dictionaryFile];
 
         
         FolderTag='processed';
@@ -170,7 +172,7 @@ switch scanName
         zMin=1;
         zMax=978;
 
-        thresh{1}='0.502'; %probability threshold value
+        thresh=0.502; %probability threshold value
                 
     case 'PEEK40/'
 
@@ -178,7 +180,7 @@ switch scanName
         
         dictionaryFolder='InsegtDictionaryFiles/';
         dictionaryFile='dictionary_PEEK40.mat';%thresh{1}='0.500';
-        path_to_dict=          [dataPath dictionaryFolder dictionaryFile];
+        path_to_dict=          [commonPath dictionaryFolder dictionaryFile];
 
         
         FolderTag='processed';
@@ -188,13 +190,13 @@ switch scanName
         yMax=871;
         zMin=1;
         zMax=978;
-        thresh{1}='0.498'; %probability threshold value
-                 
+        thresh=0.498; %probability threshold value
+
 end
 
-path_volumeFolderHist= [dataPath scanName preprocessedFiles 'V_hist.tiff'];
+path_volumeFolderHist= [commonPath scanName preprocessedFiles 'V_hist.tiff'];
 
-fprintf('Loading data...\n')
+fprintf(['Loading data at:\n' commonPath scanName preprocessedFiles '\n'])
 
 % Step 2: Load and visualise the data
 close all
@@ -232,12 +234,18 @@ V_prob=zeros(size(V_hist));
 %load the porosity mask obtained in pre-processsing
 
 %path to porosity mask
-path_toPorosityMask=[dataPath scanName preprocessedFiles 'V_pores.tiff'];
+path_toPorosityMask=[commonPath scanName preprocessedFiles 'V_pores.tiff'];
 
+if findPoresWithInsegt
+    V_pores=zeros(size(V_hist),'uint8');
+    permutationList=[1];
+else
 [V_pores,~,~,~] = loadVolumeRoI_modFacu_Volumetric(path_toPorosityMask,rectFoV,depth);
+    permutationList=[1,2,3]; %if using only 3, will produce wrong permutation, as the code assumes the permutation at 2 occurred first
+end
 
 %path to perimeter mask
-path_toPerim=[dataPath scanName preprocessedFiles 'V_perim.tiff'];
+path_toPerim=[commonPath scanName preprocessedFiles 'V_perim.tiff'];
 
 
 if exist(path_toPerim,'file')==2
@@ -249,9 +257,7 @@ else
     V_perim=false(size(V_hist));
 end
 
-
-
-for iPermutation=1:3
+for iPermutation = permutationList
     permutationVec=permutationVecAll{iPermutation};
     
     permutationStr=sprintf('Permutation%1d%1d%1d',permutationVec);
@@ -312,20 +318,28 @@ for iPermutation=1:3
     %Store Probability map
     V_prob(:,:,nextSlice)=Pcentre;
     
-    %Visualise for each pixel its probabily of belonging to a fibre centre region
-    h = figure(1); h.Units = 'normalized'; h.Position = [0.1 0.1 .7 .7];
+    %Visualise for each pixel its probability of belonging to a fibre centre region
+    h = figure(1); h.Units = 'normalized'; h.Position = [0.1 0.1 .9 .9];
     subplot(1,2,1), imagesc(Pcentre), axis image, colormap gray,  colorbar,
     figure(1), subplot(1,2,2), histogram(Pcentre(:)),
     ylabel('Count of probabilities'), xlabel('Range of probabilities')
     suptitle('Probability of belonging to the central region of a fibre')
     
     %Threshold probability map
-    areas_th = Pcentre > str2double(thresh{1});
+    if length(thresh)==3
+        areas_th = Pcentre > thresh(iPermutation);
+    else
+        areas_th = Pcentre > thresh;
+    end
     
-    tempImPores=ind2rgb(areas_th, [0 0 0; 255, 100, 255]/255);
+    tempImFibers=ind2rgb(areas_th, [0 0 0; 255, 100, 255]/255);
+    tempImPores=ind2rgb(logical(V_pores(:,:,nextSlice)), [0 0 0; 15, 255, 255]/255);    
+    tempImPerim=ind2rgb(logical(V_perim(:,:,nextSlice)), [0 0 0; 255, 255, 25]/255);
     alphaParam=0.7;
     tempImHistRGB=double(cat(3, V_hist(:,:,nextSlice), V_hist(:,:,nextSlice), V_hist(:,:,nextSlice)))/255;
-    tempImOutput=tempImHistRGB*(1-alphaParam)+tempImPores*alphaParam;
+    tempImOutput=tempImHistRGB*(1-alphaParam)+...
+        tempImFibers*alphaParam+...
+        tempImPores*alphaParam+tempImPerim*alphaParam;
     
     figure(2);
     imshowpair(areas_th,V_hist(:,:,nextSlice),'montage')
@@ -354,7 +368,7 @@ for iPermutation=1:3
     %Process the volume
     
     parfor nextSlice = 1:numel(slices)
-        %for iSlice = 1:numel(slices_frag)
+%     for nextSlice = 1:numel(slices)
         %Compute the probabilistic segmentation
         [~,allP] = process_image(V_hist(:,:,nextSlice),dictionary);
         
@@ -362,7 +376,11 @@ for iPermutation=1:3
         V_prob(:,:,nextSlice)=allP(:,:,2);
         
         %store segmentation data
-        logicalSegt=allP(:,:,2) > str2num(thresh{1});
+        if length(thresh)==3
+            logicalSegt=allP(:,:,2) > thresh(iPermutation);
+        else
+            logicalSegt=allP(:,:,2) > thresh;
+        end
         
         %regions labeled as pores (V_pores==true) cant be labelled as fibres
         logicalSegt(logical(V_pores(:,:,nextSlice)))=false;
@@ -384,8 +402,12 @@ for iPermutation=1:3
         
         descriptionStr=sprintf('{"shape ([x,y,z])":[%4.d, %4.d, %4.d]}',xDim,yDim,zDim);
         
-        
-        savePath=[dataPath scanName FolderTag strFoV '/' timeStamp '/' permutationStr ];
+        if findPoresWithInsegt
+            compressWithPython=false; 
+            savePath=[commonPath scanName FolderTag strFoV '/' timeStamp '_PoresFromInsegt/' permutationStr ];
+        else
+            savePath=[commonPath scanName FolderTag strFoV '/' timeStamp '/' permutationStr ];
+        end
         
         fprintf(['Writing to: \n' savePath '\n'])
         
@@ -393,8 +415,16 @@ for iPermutation=1:3
         
         V_export_nameHist=[savePath '/V_hist.tiff'];
         V_export_namePores=[savePath '/V_pores.tiff'];
-        V_export_nameSegt=[savePath '/V_fibers.tiff'];
+        
+        if findPoresWithInsegt
+            V_export_nameSegt=[savePath '/V_pores.tiff'];
+        else
+            V_export_nameSegt=[savePath '/V_fibers.tiff'];
+        end
+        
+        if ~findPoresWithInsegt
         V_export_nameProb=[savePath '/V_prob.tiff'];
+        end
         if perim_present
             V_export_namePerim=[savePath '/V_perim.tiff'];
         end
@@ -406,18 +436,26 @@ for iPermutation=1:3
                 elseif strcmp(unitTiff,'Inch')
                     scaleFactor=1;
                 end
+                
                 imwrite(im2uint8(V_hist(:,:,iSlice)),V_export_nameHist,...
                     'Resolution',[xResolution,yResolution]*scaleFactor,...
                     'Description',descriptionStr); %only 16 discrete bins do to hist eq, no need for uint16. this data is only used for visual validation, not processing
-                imwrite(im2uint8(V_pores(:,:,iSlice)),   V_export_namePores,...
-                    'Resolution',[xResolution,yResolution]*scaleFactor,...
-                    'Description',descriptionStr);
+                
+                if ~findPoresWithInsegt
+                    imwrite(im2uint8(V_pores(:,:,iSlice)),   V_export_namePores,...
+                        'Resolution',[xResolution,yResolution]*scaleFactor,...
+                        'Description',descriptionStr);
+                end
+                
                 imwrite(V_fibers(:,:,iSlice),     V_export_nameSegt,...
                     'Resolution',[xResolution,yResolution]*scaleFactor,...
                     'Description',descriptionStr);
+                if ~findPoresWithInsegt
+                    %V_prob is not used in this case
                 imwrite(im2uint8(V_prob(:,:,iSlice)),     V_export_nameProb,...
                     'Resolution',[xResolution,yResolution]*scaleFactor,...
                     'Description',descriptionStr);
+                end
                 if perim_present
                     imwrite(V_perim(:,:,iSlice),     V_export_namePerim,...
                         'Resolution',[xResolution,yResolution]*scaleFactor,...
@@ -427,7 +465,10 @@ for iPermutation=1:3
                 imwrite(im2uint8(V_hist (:,:,iSlice)),V_export_nameHist, 'WriteMode', 'append');
                 imwrite(im2uint8(V_pores(:,:,iSlice)),V_export_namePores,'WriteMode', 'append');
                 imwrite(V_fibers(:,:,iSlice),         V_export_nameSegt, 'WriteMode', 'append');
+                if ~findPoresWithInsegt
+                    %V_prob is not used in case findPoresWithInsegt==true
                 imwrite(im2uint8(V_prob(:,:,iSlice)),V_export_nameProb, 'WriteMode', 'append');
+                end
                 if perim_present
                     imwrite(V_perim(:,:,iSlice),     V_export_namePerim,'WriteMode', 'append');              
                 end
@@ -447,14 +488,18 @@ for iPermutation=1:3
             
             exportData.dictionaryFolder=path_to_dict;
             exportData.dictionaryFile=dictionaryFile;
-            exportData.probabilityThresh=thresh{1};
+            exportData.probabilityThresh=thresh;
             exportData.preProcessedFiles=preprocessedFiles;
-            exportData.dataPath=dataPath;
+            exportData.commonPath=commonPath;
             exportData.permutationVec=permutationVec;
             
             jsonContent=jsonencode(exportData);
             
-            savePathParam=[dataPath scanName FolderTag strFoV '/' timeStamp '/'];
+            if findPoresWithInsegt
+                savePathParam=[commonPath scanName FolderTag strFoV '/' timeStamp '_PoresFromInsegt/'];
+            else
+                savePathParam=[commonPath scanName FolderTag strFoV '/' timeStamp '/'];
+            end
             
             filename = [savePathParam '/SegtParams' ];
             

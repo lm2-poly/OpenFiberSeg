@@ -27,13 +27,13 @@ findPores=True
 
 ##########################################
 
-plotThresholding                =False
-plotCanny_perimeterDetection    =False
-plotOpening_perimeterDetection  =False #volumetric processing
+plotThresholding                =True
+plotCanny_perimeterDetection    =True
+plotOpening_perimeterDetection  =True #volumetric processing
 
-plotCannyEdgeDetection          =False
-plotFloodFilling                =False
-plotOpening_Closing_pores       =False #volumetric processing
+plotCannyEdgeDetection          =True
+plotFloodFilling                =True
+plotOpening_Closing_pores       =True #volumetric processing
 
 parallelHandle=True
 

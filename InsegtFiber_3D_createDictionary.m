@@ -18,7 +18,7 @@ close all
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% scanName='PEEK15/';
+scanName='PEEK15/';
 % scanName='PEEK20/';
 % scanName='PEEK25/';
 % scanName='PEEK30/';
@@ -77,7 +77,7 @@ switch scanName
         yMax=871;
         zMin=1;
         zMax=10; 
- 
+        
 end
 
 preprocessedFiles='preProcessed/';
@@ -148,7 +148,8 @@ areas_th = Pcentre > str2double(thresh{1});
 tempImFibers=ind2rgb(areas_th, [0 0 0; 255, 100, 255]/255);
 alphaParam=0.7;
 tempImHistRGB=double(cat(3, V_hist(:,:,sliceAnalys), V_hist(:,:,sliceAnalys), V_hist(:,:,sliceAnalys)))/255;
-tempImOutput=tempImHistRGB*(1-alphaParam)+tempImFibers*alphaParam;
+tempImOutput=tempImHistRGB*(1-alphaParam)+...
+    tempImFibers*alphaParam;
 
 figure(1)
 imshowpair(areas_th,V_hist(:,:,sliceAnalys),'montage')
