@@ -414,11 +414,11 @@ for iPermutation = permutationList
         mkdir(savePath)
         
         V_export_nameHist=[savePath '/V_hist.tiff'];
-        V_export_namePores=[savePath '/V_pores.tiff'];
         
         if findPoresWithInsegt
             V_export_nameSegt=[savePath '/V_pores.tiff'];
         else
+            V_export_namePores=[savePath '/V_pores.tiff'];
             V_export_nameSegt=[savePath '/V_fibers.tiff'];
         end
         
@@ -463,11 +463,11 @@ for iPermutation = permutationList
                 end
             else
                 imwrite(im2uint8(V_hist (:,:,iSlice)),V_export_nameHist, 'WriteMode', 'append');
-                imwrite(im2uint8(V_pores(:,:,iSlice)),V_export_namePores,'WriteMode', 'append');
                 imwrite(V_fibers(:,:,iSlice),         V_export_nameSegt, 'WriteMode', 'append');
                 if ~findPoresWithInsegt
                     %V_prob is not used in case findPoresWithInsegt==true
-                imwrite(im2uint8(V_prob(:,:,iSlice)),V_export_nameProb, 'WriteMode', 'append');
+                    imwrite(im2uint8(V_prob(:,:,iSlice)),V_export_nameProb, 'WriteMode', 'append');
+                    imwrite(im2uint8(V_pores(:,:,iSlice)),V_export_namePores,'WriteMode', 'append');
                 end
                 if perim_present
                     imwrite(V_perim(:,:,iSlice),     V_export_namePerim,'WriteMode', 'append');              
