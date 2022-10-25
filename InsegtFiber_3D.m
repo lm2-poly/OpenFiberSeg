@@ -392,7 +392,22 @@ for iPermutation = permutationList
         
     end
     
+    if findPoresWithInsegt
+        poreCount=sum(sum(sum(V_fibers/255)));
+        if perim_present
+            perimCount=sum(sum(sum(V_perim/255)));
+        else
+            perimCount=0;
+        end
+        dims=size(V_fibers);
+        totalCount=dims(1)*dims(2)*dims(3);
+        
+        porosity=poreCount/(totalCount-perimCount);
+        
+        fprintf('\nPorosity estimate: %4.3f %%\n',porosity*100)
+    end
     
+
     if writeToDisk
         
         
@@ -493,14 +508,16 @@ for iPermutation = permutationList
             exportData.commonPath=commonPath;
             exportData.permutationVec=permutationVec;
             
-            jsonContent=jsonencode(exportData);
             
             if findPoresWithInsegt
+                exportData.porosity=porosity;
                 savePathParam=[commonPath scanName FolderTag strFoV '/' timeStamp '_PoresFromInsegt/'];
             else
                 savePathParam=[commonPath scanName FolderTag strFoV '/' timeStamp '/'];
             end
             
+            jsonContent=jsonencode(exportData);
+
             filename = [savePathParam '/SegtParams' ];
             
             fid = fopen([filename '.json'],'w');    % open file for writing (overwrite if necessary)
