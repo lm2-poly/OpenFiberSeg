@@ -10,6 +10,7 @@ from postProcessing import postProcessingOfFibers
 from combinePermutationsRefactored import combinePermutations
 from outputPropertyMapsRefactored import outputPropertyMap
 from preProcessingFunctions import find
+from cropTiff_Amitex import cropTiff_Amitex
 
 from tifffile import TiffFile
 import tifffile
@@ -30,8 +31,8 @@ def getCommonPaths(rootPath):
 
     for dir in directories:
         
-        #check for output directory of last step: fiber fraction adjustment
-        test=find(dir,"PropertyMaps.vtk")
+        #check for output directory of last step: cropping
+        test=find(dir,"croppingStats.json")
 
         if len(test)==0:
             unProcessedDirectories.append(dir)
@@ -56,7 +57,6 @@ print('Current hostname is :', hostnameStr)
 ####################################################################makePlots##
 
 dataPath="./TomographicData/PEEK15/"
-
 
 # find directories with dataset processed with Insegt, but not tracked 
 # (will have SegtParams.json file, but not PropertyMaps.vtk, the final output)
@@ -522,6 +522,100 @@ for commonPath in directories:
             randomizeFiberMap=randomizeFiberMap,
             makeVTKfiles=makeVTKfiles)
 
+    #########################################
+    ###
+    ###   make files for Amitex computations
+    ###
+
+    makeAmitexOutput    =True
+    keepOnlyDownSampled =False # cropped (not downsampled) files are required for adjustment
+
+    doFractionAdjustment=False
+
+    if makeAmitexOutput:
+        pathAmitexFiles=os.path.join(commonPath,"AmitexFiles")
+
+        pathAmitexFilesCropped={}
+        pathAmitexFilesDownSampled={}
+
+        if manualCropping is None:
+            manualCropping={"noManualCropping":None}
+
+        for volumeLabel in manualCropping:
+            pathAmitexFilesCropped[volumeLabel]=os.path.join(pathAmitexFiles,"cropped",volumeLabel)
+            pathAmitexFilesDownSampled[volumeLabel]=os.path.join(pathAmitexFiles,"downSampled",volumeLabel)
+
+            cropForAmitex=False
+
+            if os.path.exists(pathAmitexFiles):
+                if os.path.exists(pathAmitexFilesCropped[volumeLabel]) and \
+                    os.path.exists(pathAmitexFilesDownSampled[volumeLabel]):
+                
+                    croppedFilesMissing = checkIfFilesPresent(
+                        pathAmitexFilesCropped[volumeLabel],
+                        "fiberStruct_AMITEX.pickle",
+                        "V_fiberMapCombined_postProcessed_cropped.tiff",
+                        "V_perim_cropped.tiff",
+                        "V_pores_cropped.tiff"
+                    )
+
+                    downSampledFilesMissing = checkIfFilesPresent(
+                        pathAmitexFilesDownSampled[volumeLabel],
+                        "fiberStruct_AMITEX.pickle",
+                        "V_fiberMapCombined_postProcessed_downsampled_by_2.tiff",
+                        "V_perim_downsampled_by_2.tiff",
+                        "V_pores_downsampled_by_2.tiff"
+                    )
+
+                    if croppedFilesMissing or downSampledFilesMissing:
+                        cropForAmitex=True
+                else:
+                    cropForAmitex=True
+            else:
+                cropForAmitex=True
+
+
+        if cropForAmitex:
+
+            if {"noManualCropping"} != set(manualCropping.keys()):
+                if set(manualCropping.keys())=={"xMin","yMin","zMin","xMax","yMax","zMax"}:
+                    # case of a single cropping volume
+                    manualCropping={
+                        "singleVolume":manualCropping
+                    }
+           
+                print("\n\tcalling cropTiff_Amitex() with manualCropping of:")
+                for volumeTag,croppingSpecs in manualCropping.items():
+                    print("\nvolumeTag={}".format(volumeTag))
+                    print("\txMin={: >4.0f}\txMax={: >4.0f}".format(croppingSpecs["xMin"],croppingSpecs["xMax"]))
+                    print("\tyMin={: >4.0f}\tyMax={: >4.0f}".format(croppingSpecs["yMin"],croppingSpecs["yMax"]))
+                    if croppingSpecs["zMin"]!="all":
+                        print("\tzMin={: >4.0f}\tzMax={: >4.0f}".format(croppingSpecs["zMin"],croppingSpecs["zMax"]))
+                    else:
+                        print("\tzMin= all\tzMax= all")
+
+            else:
+                print("\n\tcalling cropTiff_Amitex() with manualCropping of: None")
+           
+            outputDict=cropTiff_Amitex(
+                manualCropping,
+                commonPath,
+                pathAmitexFiles,
+                makePlots=False,
+                doDownSampling=True,
+                keepOnlyDownSampled=keepOnlyDownSampled
+                )
+
+            croppingStatsDict={
+                "manualCropping":manualCropping,
+                "commonPath":commonPath,
+                "hostname":hostnameStr
+            }
+
+            croppingStatsDict.update(outputDict)
+
+            with open(os.path.join(pathAmitexFiles,"croppingStats.json"), "w") as f:
+                json.dump(croppingStatsDict, f, sort_keys=False, indent=4)
 
 
 print("\n\tDone ")
